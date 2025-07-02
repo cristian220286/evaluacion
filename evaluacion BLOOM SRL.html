@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="es" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Candidatos</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+   <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.2);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dark .glassmorphism {
+            background: rgba(31, 41, 55, 0.25);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .progress-bar-inner { transition: width 0.5s ease-in-out; }
+        .option-btn { transition: all 0.2s ease-in-out; }
+        
+        .option-btn.selected {
+            border-color: #3b82f6; /* Azul de Tailwind */
+            background-color: #3b82f6;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px 0 rgb(0 118 255 / 39%);
+        }
+
+        .option-btn:not(.selected):hover {
+            border-color: #60a5fa; /* Azul más claro */
+            transform: translateY(-2px);
+        }
+
+        .fade-slide-enter { opacity: 0; transform: translateY(20px); }
+        .fade-slide-exit { opacity: 0; transform: translateY(-20px); }
+        .view-transition { transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+
+    <div id="loader" class="fixed inset-0 bg-gray-100 dark:bg-gray-900 flex items-center justify-center z-50">
+        <div class="w-16 h-16 border-4 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
+    </div>
+
+    <main id="app-container" class="min-h-screen w-full flex flex-col items-center justify-center p-4 opacity-0 transition-opacity duration-500">
+        
+        <div id="main-card" class="w-full max-w-3xl mx-auto rounded-2xl shadow-2xl overflow-hidden glassmorphism">
+            <header class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+                <h1 class="text-2xl font-bold text-center text-gray-900 dark:text-white">Evaluación de Candidatos</h1>
+                <p class="text-sm text-center text-gray-600 dark:text-gray-400 mt-1">[BLOOM SRL]</p>
+            </header>
+
+            <div id="welcome-view" class="p-8 view-transition">
+                <h2 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Bienvenido/a</h2>
+                <p class="mb-6 text-gray-700 dark:text-gray-300">Esta evaluación está diseñada para entender mejor tu enfoque para resolver situaciones laborales. No hay respuestas correctas o incorrectas. Por favor, responde con honestidad.</p>
+                <form id="user-form">
+                    <div class="mb-4">
+                        <label for="nombreCompleto" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Nombre Completo</label>
+                        <input type="text" id="nombreCompleto" class="mt-1 block w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="email" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Correo Electrónico</label>
+                        <input type="email" id="email" class="mt-1 block w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="perfil" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Selecciona el perfil para el que aplicas</label>
+                        <select id="perfil" class="mt-1 block w-full pl-3 pr-10 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" required>
+                            <option value="" disabled selected>Elige un perfil...</option>
+                            <option value="Vendedor">Vendedor / Comercial</option>
+                            <option value="Administrativo">Administrativo / Soporte</option>
+                            <option value="Marketing">Marketing / Creativo</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transform hover:scale-105 transition-all">Comenzar Evaluación</button>
+                </form>
+            </div>
+
+            <div id="quiz-view" class="p-8 hidden view-transition">
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-sm font-medium text-blue-700 dark:text-white">Pregunta <span id="current-q-number"></span> de <span id="total-q-number"></span></p>
+                        <p id="profile-tag" class="text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 px-2 py-1 rounded-full"></p>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full progress-bar-inner" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div id="question-container">
+                    <p class="text-lg font-semibold mb-1 text-gray-800 dark:text-gray-100">Contexto:</p>
+                    <p id="q-context" class="text-gray-700 dark:text-gray-300 mb-4"></p>
+                    <p class="text-lg font-semibold mb-1 text-gray-800 dark:text-gray-100">Dilema:</p>
+                    <p id="q-dilemma" class="text-gray-700 dark:text-gray-300 mb-4"></p>
+                    <p id="q-text" class="font-bold text-lg mb-6 text-gray-900 dark:text-white"></p>
+                    <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+                 <p id="validation-error" class="text-red-500 text-center mt-4 hidden">Por favor, selecciona una respuesta para continuar.</p>
+                 <div class="mt-8 flex justify-end">
+                    <button id="next-btn" class="py-3 px-8 border border-transparent rounded-lg shadow-lg text-lg font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transform hover:scale-105 transition-all">Siguiente</button>
+                </div>
+            </div>
+
+            <div id="thank-you-view" class="p-8 hidden view-transition text-center">
+                 <div id="sending-spinner" class="flex flex-col items-center justify-center">
+                    <div class="w-12 h-12 border-4 border-t-transparent border-blue-500 rounded-full animate-spin mb-4"></div>
+                    <p class="text-lg font-semibold">Enviando tus respuestas...</p>
+                    <p class="text-sm text-gray-500">Esto puede tomar un momento.</p>
+                </div>
+                <div id="thank-you-content" class="hidden">
+                    <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-3">¡Gracias por completar la evaluación!</h2>
+                    <p class="mb-6 text-gray-700 dark:text-gray-300">Hemos recibido tus respuestas. Nuestro equipo de reclutamiento se pondrá en contacto contigo si tu perfil avanza en el proceso.</p>
+                    <p class="text-sm mb-4 font-medium">Como un pequeño extra, aquí tienes una representación visual de tu enfoque único para resolver problemas:</p>
+                    <div class="max-w-md mx-auto">
+                        <canvas id="radar-chart"></canvas>
+                    </div>
+                </div>
+                 <div id="error-message" class="hidden text-center">
+                    <p class="font-bold text-red-600 text-lg">¡Oops! Hubo un error.</p>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">No pudimos enviar tus respuestas. Verifica tu conexión a internet o contacta al reclutador.</p>
+                </div>
+            </div>
+        </div>
+        
+        <button id="dark-mode-toggle" class="fixed top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+        </button>
+    </main>
+
+<script>
+// ===================================================================================
+// CONFIGURACIÓN PRINCIPAL Y ESTADO DE LA APLICACIÓN
+// ===================================================================================
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHvUftNlJmW2vqSW4cLR2zI4iVvA2giyCB0kuS2WAGAiEQVBCXn1CB1UiOfy7nx7VhMg/exec';
+const QUESTIONS_TO_ASK = 10;
+
+const state = {
+    user: {
+        nombreCompleto: '',
+        email: '',
+        perfil: ''
+    },
+    questions: [],
+    currentQuestionIndex: 0,
+    responses: [],
+    scores: {
+        ownership: 0,
+        grit: 0,
+        growthMindset: 0,
+        judgmentReasoning: 0,
+        agilityFlexibility: 0,
+        customerFocus: 0,
+        efficiencyTeamFocus: 0,
+    },
+    isSubmitting: false
+};
+
+// ===================================================================================
+// BASE DE DATOS DE PREGUNTAS PSICOMÉTRICAS (SJT)
+// ===================================================================================
+const questionsDB = {
+    'Vendedor': [
+        // --- BANCO DE PREGUNTAS DE VENDEDOR (ROPA Y ACCESORIOS DE CELULAR) ---
+        {
+            context: "Un cliente te muestra un protector de pantalla que compró hace una semana y que ya se rompió. Insiste en que es de mala calidad.",
+            dilemma: "Sabes que esos protectores son económicos y se rompen para proteger la pantalla real, pero el cliente está muy molesto y podría dejar una mala reseña.",
+            question: "¿Qué haces?",
+            options: [
+                { text: "Le explicas pacientemente que el protector cumplió su función al romperse él en lugar de la pantalla del teléfono.", scores: { customerFocus: +1, judgmentReasoning: +2, ownership: +1 } },
+                { text: "Para evitar un conflicto, le ofreces cambiarle el protector por uno nuevo sin costo, asumiendo la pérdida.", scores: { customerFocus: +3, judgmentReasoning: -2, efficiencyTeamFocus: -2 } },
+                { text: "Le ofreces un descuento significativo en un protector de gama alta, explicando las ventajas de durabilidad y protección.", scores: { growthMindset: +2, customerFocus: +2, agilityFlexibility: +1, grit: +1 } },
+                { text: "Le dices que la garantía no cubre roturas y le sugieres comprar otro, manteniéndote firme en la política.", scores: { ownership: +2, judgmentReasoning: -1, customerFocus: -3 } }
+            ]
+        },
+        {
+            context: "Entra un grupo de adolescentes a la tienda de ropa. Se prueban muchas prendas, las dejan desordenadas y se van sin comprar nada.",
+            dilemma: "Acaban de dejar una gran cantidad de trabajo por hacer y otros clientes están esperando tu atención.",
+            question: "¿Cuál es tu prioridad inmediata?",
+            options: [
+                { text: "Ignorar el desorden por ahora y enfocarte en atender a los clientes que sí tienen intención de compra.", scores: { efficiencyTeamFocus: +2, customerFocus: +2, judgmentReasoning: +2 } },
+                { text: "Empezar a ordenar todo inmediatamente para que la tienda se vea impecable, aunque los otros clientes esperen.", scores: { ownership: +2, efficiencyTeamFocus: -2, customerFocus: -1 } },
+                { text: "Ordenar solo la sección más visible y luego volver a los clientes.", scores: { agilityFlexibility: +2, judgmentReasoning: +1, ownership: +1 } },
+                { text: "Quejarte en voz baja con un compañero sobre la situación, antes de decidir qué hacer.", scores: { ownership: -3, grit: -2, efficiencyTeamFocus: -2 } }
+            ]
+        },
+        {
+            context: "Un cliente pregunta por un modelo de funda de celular que vio online, pero que no tienes en stock físico.",
+            dilemma: "Revisas el sistema y ves que podrías pedirla, pero tardaría una semana en llegar. El cliente parece apurado.",
+            question: "¿Cuál es tu mejor estrategia?",
+            options: [
+                { text: "Le dices que no la tienes y le muestras modelos similares que sí están en la tienda.", scores: { agilityFlexibility: +1, customerFocus: +1, grit: 0 } },
+                { text: "Le ofreces pedírsela, siendo transparente sobre el tiempo de espera y tomando sus datos para avisarle.", scores: { ownership: +2, customerFocus: +2, judgmentReasoning: +1 } },
+                { text: "Le recomiendas la página web de la tienda para que la compre online, aunque eso signifique que la venta no contará para tu comisión.", scores: { efficiencyTeamFocus: +2, customerFocus: +3, ownership: -1 } },
+                { text: "Le dices que revise de nuevo la próxima semana, con la esperanza de que ya haya llegado un nuevo pedido.", scores: { ownership: -2, customerFocus: -2, grit: -1 } }
+            ]
+        },
+        {
+        context: "Un cliente te muestra un protector de pantalla que compró hace una semana y que ya se rompió. Insiste en que es de mala calidad.",
+        dilemma: "Sabes que esos protectores económicos se rompen para proteger la pantalla real, pero el cliente está muy molesto y podría dejar una mala reseña.",
+        question: "¿Cuál es tu curso de acción?",
+        options: [
+            { text: "Le explicas pacientemente que el protector cumplió su función al romperse él en lugar de la pantalla del teléfono.", scores: { customerFocus: +1, judgmentReasoning: +2, ownership: +1 } },
+            { text: "Para evitar un conflicto, le ofreces cambiarle el protector por uno nuevo sin costo, asumiendo la pérdida.", scores: { customerFocus: +3, judgmentReasoning: -2, efficiencyTeamFocus: -2 } },
+            { text: "Le ofreces un descuento significativo en un protector de gama alta, explicando las ventajas de durabilidad y protección.", scores: { growthMindset: +2, customerFocus: +2, agilityFlexibility: +1, grit: +1 } },
+            { text: "Le dices que la garantía no cubre roturas y le sugieres comprar otro, manteniéndote firme en la política.", scores: { ownership: +2, judgmentReasoning: -1, customerFocus: -3 } }
+        ]
+    },
+    {
+        context: "Entra un grupo de adolescentes a la tienda de ropa. Se prueban muchas prendas, las dejan desordenadas y se van sin comprar nada.",
+        dilemma: "Acaban de dejar una gran cantidad de trabajo por hacer y otros clientes están esperando tu atención.",
+        question: "¿Cuál es tu prioridad inmediata?",
+        options: [
+            { text: "Ignorar el desorden por ahora y enfocarte en atender a los clientes que sí tienen intención de compra.", scores: { efficiencyTeamFocus: +2, customerFocus: +2, judgmentReasoning: +2 } },
+            { text: "Empezar a ordenar todo inmediatamente para que la tienda se vea impecable, aunque los otros clientes esperen.", scores: { ownership: +2, efficiencyTeamFocus: -2, customerFocus: -1 } },
+            { text: "Ordenar solo la sección más visible y luego volver a los clientes.", scores: { agilityFlexibility: +2, judgmentReasoning: +1, ownership: +1 } },
+            { text: "Quejarte en voz baja con un compañero sobre la situación, antes de decidir qué hacer.", scores: { ownership: -3, grit: -2, efficiencyTeamFocus: -2 } }
+        ]
+    },
+    {
+        context: "Un cliente pregunta por un modelo de funda de celular que vio online, pero que no tienes en stock físico.",
+        dilemma: "Revisas el sistema y ves que podrías pedirla, pero tardaría una semana en llegar. El cliente parece apurado.",
+        question: "¿Cuál es tu mejor estrategia?",
+        options: [
+            { text: "Le dices que no la tienes y le muestras modelos similares que sí están en la tienda.", scores: { agilityFlexibility: +1, customerFocus: +1, grit: 0 } },
+            { text: "Le ofreces pedírsela, siendo transparente sobre el tiempo de espera y tomando sus datos para avisarle.", scores: { ownership: +2, customerFocus: +2, judgmentReasoning: +1 } },
+            { text: "Le recomiendas la página web de la tienda para que la compre online, aunque eso signifique que la venta no contará para tu comisión.", scores: { efficiencyTeamFocus: +2, customerFocus: +3, ownership: -1 } },
+            { text: "Le dices que revise de nuevo la próxima semana, con la esperanza de que ya haya llegado un nuevo pedido.", scores: { ownership: -2, customerFocus: -2, grit: -1 } }
+        ]
+    },
+    {
+        context: "Estás atendiendo a un cliente y tu compañero te pide ayuda urgente con una consulta técnica de otro cliente.",
+        dilemma: "Tu cliente actual está indeciso entre dos jeans caros y no quieres 'enfriar' la venta.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Le dices a tu compañero que espere a que termines con tu cliente actual.", scores: { grit: +1, efficiencyTeamFocus: -2, customerFocus: +1 } },
+            { text: "Le pides disculpas a tu cliente, le dejas los dos jeans para que se decida, y vas a ayudar a tu compañero rápidamente.", scores: { efficiencyTeamFocus: +2, customerFocus: -2, agilityFlexibility: +1 } },
+            { text: "Llamas a tu compañero y al otro cliente para que se acerquen y tratas de resolver la duda técnica sin dejar a tu cliente actual.", scores: { agilityFlexibility: +2, efficiencyTeamFocus: +1, judgmentReasoning: -1 } },
+            { text: "Le pides a tu cliente un segundo y le dices a tu compañero la respuesta en voz baja, esperando que sea suficiente.", scores: { ownership: +1, efficiencyTeamFocus: +2, judgmentReasoning: +1 } }
+        ]
+    },
+    {
+        context: "Un cliente quiere devolver una remera sin la etiqueta, diciendo que fue un regalo y que nunca la usó.",
+        dilemma: "La política de la tienda es clara: no se aceptan devoluciones sin etiqueta. Sin embargo, el cliente parece honesto y se está frustrando.",
+        question: "¿Cuál es tu decisión?",
+        options: [
+            { text: "Aplicar la política estrictamente, explicando que sin etiqueta es imposible procesar la devolución.", scores: { ownership: +2, judgmentReasoning: +1, customerFocus: -2 } },
+            { text: "Hacer una excepción a la regla y aceptar la devolución para mantener al cliente contento.", scores: { customerFocus: +2, judgmentReasoning: -2, ownership: -1 } },
+            { text: "Llamar al gerente para que él tome la decisión, traspasando la responsabilidad del caso.", scores: { efficiencyTeamFocus: +1, judgmentReasoning: +1, ownership: -1 } },
+            { text: "Ofrecerle un cambio por otra prenda del mismo valor en lugar de una devolución de dinero, como solución intermedia.", scores: { agilityFlexibility: +2, customerFocus: +1, judgmentReasoning: +2 } }
+        ]
+    },
+    {
+        context: "Notas que las fundas de celular de un modelo antiguo no se venden desde hace meses y solo ocupan espacio valioso.",
+        dilemma: "Tu gerente no ha notado el problema y está enfocado en los nuevos lanzamientos.",
+        question: "¿Qué iniciativa tomas?",
+        options: [
+            { text: "No hacer nada. No es tu responsabilidad gestionar el inventario, solo vender.", scores: { ownership: -3, growthMindset: -2, judgmentReasoning: -1 } },
+            { text: "Mover las fundas a un lugar menos visible para hacer espacio para productos más rentables.", scores: { agilityFlexibility: +1, ownership: -1, efficiencyTeamFocus: -1 } },
+            { text: "Proponerle al gerente crear una oferta de 'liquidación' para esas fundas, por ejemplo, 50% de descuento o regalarlas con la compra de un nuevo teléfono.", scores: { ownership: +3, growthMindset: +2, judgmentReasoning: +2 } },
+            { text: "Comentar casualmente con tus compañeros que esas fundas no se venden para ver si alguien más hace algo.", scores: { ownership: -2, efficiencyTeamFocus: -1, grit: -1 } }
+        ]
+    },
+    {
+        context: "Un cliente te pregunta si el cargador de 15 dólares es 'igual de bueno' que el original de 40 dólares.",
+        dilemma: "Sabes que el cargador económico funciona, pero que a largo plazo podría dañar la batería del teléfono.",
+        question: "¿Cómo respondes?",
+        options: [
+            { text: "Le dices que 'básicamente hacen lo mismo' para asegurar una venta fácil.", scores: { customerFocus: -3, judgmentReasoning: -3, grit: +1 } },
+            { text: "Le explicas honestamente que el original tiene certificaciones de seguridad que protegen la batería a largo plazo, justificando la diferencia de precio.", scores: { customerFocus: +3, judgmentReasoning: +3, ownership: +2 } },
+            { text: "Le vendes el cargador barato pero le sugieres comprar una garantía extendida 'por si acaso'.", scores: { judgmentReasoning: -2, agilityFlexibility: +1, customerFocus: -1 } },
+            { text: "Le dices que el original es mejor, pero que 'casi todo el mundo lleva el barato' para no parecer un vendedor insistente.", scores: { ownership: -1, customerFocus: 0, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "La meta de ventas del día es alta y falta una hora para cerrar. No hay muchos clientes en la tienda.",
+        dilemma: "Ves a un cliente mirando una remera de bajo precio. Podrías cerrar esa venta rápido o intentar venderle un conjunto completo para llegar a la meta.",
+        question: "¿En qué te enfocas?",
+        options: [
+            { text: "Asegurar la venta de la remera lo más rápido posible. 'Más vale pájaro en mano...'", scores: { grit: +1, judgmentReasoning: -1, agilityFlexibility: 0 } },
+            { text: "Dedicarle tiempo, preguntarle para qué ocasión es la remera y mostrarle jeans y zapatillas que combinan, aunque te arriesgues a que no compre nada.", scores: { customerFocus: +2, growthMindset: +2, grit: +2 } },
+            { text: "Dejar que ese cliente decida solo y enfocarte en ordenar la tienda para el cierre.", scores: { ownership: -2, customerFocus: -1, efficiencyTeamFocus: 0 } },
+            { text: "Le mencionas la meta al cliente para intentar que sienta empatía y compre más.", scores: { judgmentReasoning: -3, customerFocus: -2, agilityFlexibility: -1 } }
+        ]
+    },
+    {
+        context: "Un cliente te pide un descuento en una campera de nueva temporada.",
+        dilemma: "No tienes autorización para dar descuentos en productos nuevos, pero el cliente es un comprador frecuente y sabes que tu gerente a veces hace excepciones.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Le dices que lamentablemente no hay descuentos en la nueva colección.", scores: { ownership: +2, judgmentReasoning: +1, customerFocus: -1 } },
+            { text: "Le dices 'déjame ver qué puedo hacer' y vas a buscar al gerente para pedirle la excepción.", scores: { agilityFlexibility: +1, efficiencyTeamFocus: +1, customerFocus: +1 } },
+            { text: "Le ofreces un pequeño descuento por tu cuenta (ej. 10%) y lo registras como 'falla de producto' para justificarlo.", scores: { judgmentReasoning: -3, ownership: -2, customerFocus: +2 } },
+            { text: "Le explicas que no puedes darle un descuento, pero le ofreces registrar su email para avisarle en cuanto empiece la liquidación.", scores: { customerFocus: +2, judgmentReasoning: +2, growthMindset: +1 } }
+        ]
+    },
+    {
+        context: "Tu compañero de turno está enfermo y te quedaste solo en la tienda durante la hora pico del almuerzo.",
+        dilemma: "Hay una fila de gente para pagar, otros pidiendo probadores y el teléfono está sonando.",
+        question: "¿Qué tarea priorizas?",
+        options: [
+            { text: "Concentrarte 100% en la caja para mover la fila lo más rápido posible, ignorando lo demás.", scores: { efficiencyTeamFocus: +2, grit: +2, customerFocus: -1 } },
+            { text: "Intentar hacer todo a la vez: cobrar, alcanzar ropa, contestar el teléfono, aunque todo lo hagas más lento.", scores: { agilityFlexibility: -1, judgmentReasoning: -2, efficiencyTeamFocus: -2 } },
+            { text: "Gestionar la fila pidiendo disculpas por la demora y atendiendo las solicitudes más rápidas entre cliente y cliente.", scores: { customerFocus: +2, agilityFlexibility: +2, judgmentReasoning: +2 } },
+            { text: "Llamar a tu gerente para informarle de la situación y pedirle ayuda o autorización para cerrar temporalmente los probadores.", scores: { ownership: +2, judgmentReasoning: +3, efficiencyTeamFocus: +1 } }
+        ]
+    },
+    {
+        context: "Un cliente se está probando ropa y te pregunta tu opinión personal sobre cómo le queda un pantalón.",
+        dilemma: "Sinceramente, crees que no le favorece en absoluto.",
+        question: "¿Qué le dices?",
+        options: [
+            { text: "'¡Te queda genial!' para asegurar la venta y no herir sus sentimientos.", scores: { customerFocus: -2, judgmentReasoning: -3, ownership: -1 } },
+            { text: "'No estoy seguro de que sea el mejor corte para ti. ¿Probamos este otro modelo? Creo que te sentará mucho mejor'.", scores: { customerFocus: +3, judgmentReasoning: +3, ownership: +2 } },
+            { text: "'La verdad, no me convence'. Siendo totalmente honesto.", scores: { grit: +1, customerFocus: 0, judgmentReasoning: 0 } },
+            { text: "Evitas la pregunta y le dices: 'Lo más importante es cómo te sientas tú con él'.", scores: { agilityFlexibility: +1, customerFocus: -1, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "La tienda acaba de recibir una nueva herramienta para grabar iniciales en las fundas de cuero de los celulares.",
+        dilemma: "Nadie te ha capacitado formalmente en su uso y tienes miedo de arruinar un producto si lo intentas.",
+        question: "¿Cuál es tu actitud?",
+        options: [
+            { text: "No ofrecer el servicio hasta que alguien te capacite formalmente.", scores: { ownership: 0, judgmentReasoning: +1, growthMindset: -2 } },
+            { text: "Practicar con fundas viejas o defectuosas en tu tiempo libre hasta que domines la técnica.", scores: { grit: +3, growthMindset: +3, ownership: +2 } },
+            { text: "Intentarlo con el primer cliente que lo pida, yendo con mucho cuidado.", scores: { grit: +1, judgmentReasoning: -3, ownership: -1 } },
+            { text: "Pedirle a tu gerente que organice una capacitación para todo el equipo.", scores: { efficiencyTeamFocus: +2, growthMindset: +1, ownership: +1 } }
+        ]
+    },
+    {
+        context: "Un cliente muy conversador te está contando una larga historia personal.",
+        dilemma: "Te está quitando mucho tiempo y ves a otros clientes esperando ser atendidos.",
+        question: "¿Cómo manejas la situación?",
+        options: [
+            { text: "Escucharlo pacientemente hasta que termine, aunque otros clientes se vayan.", scores: { customerFocus: +2, efficiencyTeamFocus: -3, judgmentReasoning: -1 } },
+            { text: "Interrumpirlo cortésmente diciendo: 'Me encantaría seguir charlando, pero debo atender a otros clientes. ¿Necesitabas algo más?'", scores: { customerFocus: +1, judgmentReasoning: +2, efficiencyTeamFocus: +2 } },
+            { text: "Mientras te habla, hacerle señas a un compañero para que atienda a los otros clientes.", scores: { agilityFlexibility: +2, efficiencyTeamFocus: +2, ownership: -1 } },
+            { text: "Empezar a mirar tu reloj o a mostrarte impaciente para que capte la indirecta.", scores: { customerFocus: -2, judgmentReasoning: -2, grit: -1 } }
+        ]
+    },
+    {
+        context: "Se lanza una promoción interna: el vendedor que venda más auriculares de la marca 'X' en el mes, gana un bono.",
+        dilemma: "Sabes que los auriculares de la marca 'Y' son de mejor calidad por un precio similar.",
+        question: "¿Qué haces cuando un cliente pide una recomendación de auriculares?",
+        options: [
+            { text: "Recomendar siempre los de la marca 'X' para intentar ganar el bono.", scores: { grit: +2, customerFocus: -3, judgmentReasoning: -2 } },
+            { text: "Presentar ambos modelos objetivamente y dejar que el cliente decida.", scores: { judgmentReasoning: +3, customerFocus: +2, ownership: +1 } },
+            { text: "Recomendar los de la marca 'Y' porque son mejores, renunciando a la posibilidad de ganar el bono.", scores: { customerFocus: +3, ownership: +2, grit: -1 } },
+            { text: "Hablar con tus compañeros para que todos se enfoquen en la marca 'Y' y nadie gane el bono.", scores: { efficiencyTeamFocus: -3, judgmentReasoning: -2, ownership: -2 } }
+        ]
+    },
+    {
+        context: "Un cliente te paga una compra grande con muchos billetes pequeños y hay fila detrás de él.",
+        dilemma: "Contar todo el dinero cuidadosamente te tomará varios minutos.",
+        question: "¿Cuál es tu enfoque?",
+        options: [
+            { text: "Contar el dinero muy rápido, aunque te arriesgues a equivocarte, para no hacer esperar a la fila.", scores: { efficiencyTeamFocus: +1, judgmentReasoning: -3, customerFocus: +1 } },
+            { text: "Pedirle disculpas a la gente de la fila y contar el dinero con calma y precisión para evitar errores.", scores: { ownership: +3, judgmentReasoning: +3, grit: +2 } },
+            { text: "Pedirle a un compañero que abra otra caja para ayudar con la fila mientras tú terminas la transacción.", scores: { agilityFlexibility: +2, efficiencyTeamFocus: +3, judgmentReasoning: +1 } },
+            { text: "Contar una parte del dinero y preguntarle al cliente 'confío en ti, ¿está correcto?' para acelerar.", scores: { judgmentReasoning: -3, ownership: -3, customerFocus: 0 } }
+        ]
+    },
+    {
+        context: "Una clienta pregunta si un vestido 'encogerá' al lavarlo.",
+        dilemma: "La etiqueta dice 'Lavar a mano, puede encoger', pero si le dices eso, probablemente no lo compre.",
+        question: "¿Qué le respondes?",
+        options: [
+            { text: "Le dices que no, que si lo lava con cuidado no tendrá ningún problema.", scores: { customerFocus: -2, judgmentReasoning: -3, ownership: -2 } },
+            { text: "Le muestras la etiqueta y le explicas honestamente lo que indica, sugiriendo que quizás lleve una talla más si le preocupa.", scores: { customerFocus: +3, judgmentReasoning: +3, ownership: +2 } },
+            { text: "Le dices 'es de buena calidad, no debería encoger', evitando confirmar o negar directamente.", scores: { agilityFlexibility: +1, judgmentReasoning: -2, customerFocus: -1 } },
+            { text: "Le sugieres que lo lave siempre en seco para evitar cualquier riesgo, aunque sea más caro para ella.", scores: { customerFocus: +1, judgmentReasoning: +1, agilityFlexibility: +1 } }
+        ]
+    },
+    {
+        context: "El sistema de inventario dice que queda una sola unidad de un jean en la talla que busca un cliente.",
+        dilemma: "Tras buscar 10 minutos en el depósito, no lo encuentras.",
+        question: "¿Qué le dices al cliente?",
+        options: [
+            { text: "Le dices que lamentablemente no lo encontraste y que el sistema debe estar equivocado.", scores: { grit: -1, customerFocus: 0, ownership: 0 } },
+            { text: "Sales y le dices 'lo sigo buscando, pero mientras tanto, ¿por qué no pruebas este otro modelo que es muy popular?'", scores: { agilityFlexibility: +2, customerFocus: +2, growthMindset: +1 } },
+            { text: "Le pides su número de teléfono y te comprometes a seguir buscando cuando la tienda esté más tranquila y a llamarlo si aparece.", scores: { ownership: +3, grit: +2, customerFocus: +3 } },
+            { text: "Le pides a otro compañero que busque por ti, mientras tú atiendes a otros clientes.", scores: { efficiencyTeamFocus: +2, ownership: -1, customerFocus: 0 } }
+        ]
+    },
+    {
+        context: "Te das cuenta de que un compañero está ofreciendo descuentos no autorizados a sus amigos.",
+        dilemma: "Es un compañero con el que tienes buena relación y no quieres causarle problemas, pero sabes que está mal.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "No hacer nada y hacer de cuenta que no viste nada para mantener la buena relación.", scores: { ownership: -3, judgmentReasoning: -2, efficiencyTeamFocus: +1 } },
+            { text: "Hablar con tu compañero en privado, decirle que lo viste y que eso podría traerle serios problemas.", scores: { judgmentReasoning: +3, ownership: +2, efficiencyTeamFocus: 0 } },
+            { text: "Informar al gerente de forma anónima sobre lo que está sucediendo.", scores: { ownership: +1, judgmentReasoning: +2, grit: 0 } },
+            { text: "Avisarle a tu compañero que el gerente ha estado revisando las cámaras últimamente para que deje de hacerlo.", scores: { agilityFlexibility: +1, judgmentReasoning: -1, ownership: -1 } }
+        ]
+    },
+    {
+        context: "Un cliente te pide que le pases los datos de su teléfono viejo a uno nuevo que acaba de comprar.",
+        dilemma: "Este es un servicio que técnicamente no ofrece la tienda y que te tomará al menos 30 minutos, tiempo en el que no podrás vender.",
+        question: "¿Cuál es tu respuesta?",
+        options: [
+            { text: "Le explicas amablemente que la tienda no ofrece ese servicio.", scores: { ownership: +1, judgmentReasoning: +2, customerFocus: -1 } },
+            { text: "Aceptas hacerlo para asegurar un cliente muy satisfecho, aunque descuides otras tareas.", scores: { customerFocus: +3, efficiencyTeamFocus: -3, ownership: +1 } },
+            { text: "Le dices que puedes ayudarlo, pero que primero debe terminar de atender a los demás clientes.", scores: { customerFocus: +1, efficiencyTeamFocus: +1, agilityFlexibility: +1 } },
+            { text: "Le enseñas cómo iniciar la transferencia automática del teléfono y le ofreces tu ayuda si se atasca en algún paso, fomentando su autonomía.", scores: { customerFocus: +2, growthMindset: +2, judgmentReasoning: +3 } }
+        ]
+    },
+    {
+        context: "Es un día muy lento con casi ningún cliente.",
+        dilemma: "Has terminado todas tus tareas de reposición y orden.",
+        question: "¿Cómo aprovechas el tiempo?",
+        options: [
+            { text: "Te relajas y revisas tu teléfono hasta que entre un cliente.", scores: { grit: -3, ownership: -2, growthMindset: -2 } },
+            { text: "Practicas nuevos argumentos de venta o investigas las características de los productos menos vendidos.", scores: { growthMindset: +3, ownership: +2, grit: +2 } },
+            { text: "Realizas una limpieza profunda de los estantes y vitrinas, aunque no sea tu tarea principal.", scores: { ownership: +3, efficiencyTeamFocus: +1, grit: +1 } },
+            { text: "Inicias una conversación con tu compañero sobre temas no relacionados con el trabajo.", scores: { efficiencyTeamFocus: -2, grit: -2, ownership: -1 } }
+        ]
+    },
+    {
+        context: "Un turista entra a la tienda de ropa buscando 'algo típico del país'.",
+        dilemma: "Tu tienda vende moda internacional y no tienes nada que se ajuste a esa descripción.",
+        question: "¿Cómo lo ayudas?",
+        options: [
+            { text: "Le dices que aquí no encontrará eso y le deseas suerte.", scores: { customerFocus: -1, ownership: 0, judgmentReasoning: 0 } },
+            { text: "Intentas venderle una remera con el nombre de la ciudad, aunque no sea lo que busca.", scores: { grit: +1, customerFocus: -2, judgmentReasoning: -1 } },
+            { text: "Le explicas que tu tienda tiene otro estilo, pero amablemente le indicas en un mapa dónde hay tiendas de artesanías locales.", scores: { customerFocus: +3, ownership: +2, judgmentReasoning: +2 } },
+            { text: "Le preguntas qué tipo de prenda busca y tratas de encontrar algo que tenga un 'aire' local, aunque no lo sea.", scores: { agilityFlexibility: +2, customerFocus: +1, growthMindset: +1 } }
+        ]
+    },
+    {
+        context: "Estás a cargo de armar la vidriera principal.",
+        dilemma: "Tu gerente te dio una directiva clara sobre qué prendas poner, pero tú tienes una idea creativa que crees que llamará mucho más la atención.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Seguir las instrucciones de tu gerente al pie de la letra.", scores: { ownership: +1, judgmentReasoning: +1, growthMindset: -2 } },
+            { text: "Armar la vidriera con tu idea sin consultar. Si funciona, todos ganan.", scores: { grit: +1, judgmentReasoning: -2, ownership: -1 } },
+            { text: "Armas un boceto rápido de tu idea y se lo presentas a tu gerente, explicando por qué crees que funcionará mejor.", scores: { growthMindset: +3, ownership: +2, judgmentReasoning: +2 } },
+            { text: "Armas la vidriera como dijo el gerente, pero agregas un par de detalles de tu propia idea.", scores: { agilityFlexibility: +1, judgmentReasoning: -1, ownership: 0 } }
+        ]
+    },
+    {
+        context: "Un cliente te dice: 'Lo vi más barato en otra tienda'.",
+        dilemma: "No puedes igualar el precio.",
+        question: "¿Cuál es tu mejor argumento?",
+        options: [
+            { text: "'Entiendo, pero nuestros productos tienen garantía oficial y soporte post-venta que quizás allí no encuentre'.", scores: { customerFocus: +2, judgmentReasoning: +3, growthMindset: +1 } },
+            { text: "'Bueno, si lo consigue más barato en otro lado, quizás le convenga comprarlo allí'.", scores: { customerFocus: -2, grit: -2, ownership: -1 } },
+            { text: "Cuestionas si el producto que vio es exactamente el mismo modelo y si es nuevo.", scores: { grit: +1, customerFocus: -1, judgmentReasoning: -1 } },
+            { text: "Le ofreces un producto de menor valor que sí puedas venderle más barato.", scores: { agilityFlexibility: +1, customerFocus: 0, judgmentReasoning: 0 } }
+        ]
+    },
+    {
+        context: "El POS (terminal de pago) se queda sin conexión y no puedes cobrar con tarjeta.",
+        dilemma: "Un cliente con una gran compra solo tiene tarjeta y no hay un cajero automático cerca.",
+        question: "¿Qué solución propones?",
+        options: [
+            { text: "Pedirle disculpas y decirle que lamentablemente solo puedes aceptar efectivo en este momento.", scores: { ownership: 0, customerFocus: -1, judgmentReasoning: +1 } },
+            { text: "Llamar al soporte técnico del POS y hacer esperar al cliente, sin un tiempo estimado de solución.", scores: { grit: -1, judgmentReasoning: -1, efficiencyTeamFocus: -2 } },
+            { text: "Ofrecerle guardarle los productos y que vuelva más tarde o mañana para pagar.", scores: { customerFocus: +2, agilityFlexibility: +1, ownership: +1 } },
+            { text: "Sugerirle si puede pagar a través de una transferencia bancaria o un link de pago generado desde el teléfono de la tienda.", scores: { agilityFlexibility: +3, growthMindset: +2, judgmentReasoning: +2 } }
+        ]
+    },
+    {
+        context: "Llevas una hora de tu turno y te das cuenta de que la música funcional de la tienda es muy deprimente y lenta.",
+        dilemma: "La playlist la elige el gerente, que no está en la tienda.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Aguantarte la música. No es apropiado cambiar las decisiones del gerente.", scores: { ownership: -1, grit: -1, judgmentReasoning: 0 } },
+            { text: "Cambiarla por una playlist más enérgica y apropiada para la marca desde tu propio teléfono.", scores: { agilityFlexibility: +2, ownership: +1, judgmentReasoning: -1 } },
+            { text: "Le envías un mensaje de texto al gerente sugiriendo amablemente si podrías cambiar la música para levantar el ánimo de la tienda.", scores: { ownership: +2, judgmentReasoning: +2, efficiencyTeamFocus: +1 } },
+            { text: "Bajas el volumen al mínimo para que casi no se escuche.", scores: { agilityFlexibility: +1, ownership: -1, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "Un cliente se queja de que el aire acondicionado está demasiado fuerte y tiene frío.",
+        dilemma: "Segundos después, otro cliente se queja de que hace mucho calor y te pide que lo subas.",
+        question: "¿Cómo manejas los pedidos opuestos?",
+        options: [
+            { text: "Le haces caso al primer cliente que se quejó.", scores: { judgmentReasoning: -2, agilityFlexibility: -1, customerFocus: 0 } },
+            { text: "No haces nada, explicando a ambos que el termostato está programado para mantener una temperatura media.", scores: { ownership: +1, judgmentReasoning: +2, customerFocus: -1 } },
+            { text: "Buscas un punto intermedio, ajustando ligeramente la temperatura y explicando a ambos que buscas un balance para el confort de todos.", scores: { agilityFlexibility: +2, customerFocus: +2, judgmentReasoning: +2 } },
+            { text: "Le haces caso al cliente que parece que va a gastar más dinero.", scores: { judgmentReasoning: -3, customerFocus: -1, efficiencyTeamFocus: 0 } }
+        ]
+    },
+    {
+        context: "Estás por cerrar la tienda y un cliente entra 'solo para mirar'.",
+        dilemma: "Estás cansado y quieres irte a casa, pero también es una posible última venta.",
+        question: "¿Cuál es tu actitud?",
+        options: [
+            { text: "Le informas amablemente que estás a 5 minutos de cerrar para que se apure.", scores: { efficiencyTeamFocus: +1, customerFocus: -1, judgmentReasoning: 0 } },
+            { text: "Lo atiendes con la misma energía que al primer cliente del día, ofreciéndole tu ayuda sin apurarlo.", scores: { customerFocus: +3, grit: +2, ownership: +2 } },
+            { text: "Empiezas a apagar las luces y a cerrar la caja para que entienda que debe irse.", scores: { ownership: -2, customerFocus: -3, judgmentReasoning: -2 } },
+            { text: "Le dejas mirar solo mientras terminas tus tareas de cierre, sin prestarle mucha atención a menos que te llame.", scores: { efficiencyTeamFocus: +1, customerFocus: -1, agilityFlexibility: 0 } }
+        ]
+    },
+    {
+        context: "El nuevo modelo de celular que todos quieren se agotó.",
+        dilemma: "Siguen entrando clientes a preguntar por él.",
+        question: "¿Qué estrategia implementas?",
+        options: [
+            { text: "Simplemente decir 'no tenemos más' a cada persona que pregunta.", scores: { grit: -1, ownership: -1, customerFocus: -1 } },
+            { text: "Crear una lista de espera para llamar a los clientes apenas entre el nuevo stock.", scores: { ownership: +3, customerFocus: +3, growthMindset: +1 } },
+            { text: "Aprovechar la pregunta para ofrecerles el modelo anterior con un descuento especial.", scores: { agilityFlexibility: +2, customerFocus: +1, grit: +1 } },
+            { text: "Poner un cartel grande en la puerta que diga 'Modelo X AGOTADO' para no perder tiempo respondiendo.", scores: { efficiencyTeamFocus: +2, customerFocus: -2, judgmentReasoning: 0 } }
+        ]
+    },
+    {
+        context: "Un cliente está en el probador y te pide una talla más de un pantalón.",
+        dilemma: "Estás seguro de que no queda esa talla, pero no has revisado el sistema.",
+        question: "¿Qué le respondes?",
+        options: [
+            { text: "'No, lo siento, esa talla está agotada'.", scores: { judgmentReasoning: -2, customerFocus: -1, grit: -1 } },
+            { text: "'Creo que no queda, pero déjame verificarlo en el sistema para estar 100% seguro'.", scores: { customerFocus: +2, judgmentReasoning: +3, ownership: +2 } },
+            { text: "Le llevas un pantalón de un modelo diferente en esa talla, diciéndole 'este es parecido'.", scores: { agilityFlexibility: +2, customerFocus: 0, judgmentReasoning: -1 } },
+            { text: "Le dices que vas a revisar y te tomas tu tiempo, esperando que salga y elija otra cosa.", scores: { ownership: -3, judgmentReasoning: -2, customerFocus: -2 } }
+        ]
+    },
+    {
+        context: "Tu gerente te da un feedback negativo sobre tu forma de abordar a los clientes, diciendo que eres 'demasiado amigable y poco directo'.",
+        dilemma: "Tú crees que tu método funciona y te genera buenas ventas.",
+        question: "¿Cómo reaccionas?",
+        options: [
+            { text: "Te pones a la defensiva y le muestras tus números de ventas para probar que tu método funciona.", scores: { growthMindset: -2, judgmentReasoning: -1, ownership: 0 } },
+            { text: "Aceptas el feedback sin discutir y tratas de ser más directo, aunque te sientas incómodo.", scores: { ownership: -1, agilityFlexibility: +1, growthMindset: -1 } },
+            { text: "Le agradeces el feedback y le pides si puede darte un ejemplo concreto o hacer un role-playing para entender mejor su punto de vista.", scores: { growthMindset: +3, judgmentReasoning: +2, ownership: +2 } },
+            { text: "Ignoras el feedback y sigues trabajando como siempre, pensando que no te entiende.", scores: { ownership: -2, growthMindset: -3, grit: 0 } }
+        ]
+    },
+    {
+        context: "Ves que un cliente esconde discretamente un accesorio de celular en su bolsillo.",
+        dilemma: "No estás 100% seguro, pero tu intuición te dice que está robando. La política es no confrontar directamente por seguridad.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Lo ignoras. La política es no confrontar y tu seguridad es lo primero.", scores: { ownership: -2, judgmentReasoning: +1, grit: -1 } },
+            { text: "Te acercas amablemente y le preguntas: '¿Necesita ayuda con ese accesorio? Si quiere se lo llevo a la caja'.", scores: { agilityFlexibility: +2, judgmentReasoning: +3, ownership: +2 } },
+            { text: "Lo confrontas directamente y le dices que viste lo que hizo.", scores: { grit: +1, judgmentReasoning: -3, ownership: 0 } },
+            { text: "Avisas discretamente por teléfono a la seguridad del centro comercial o a la policía.", scores: { ownership: +1, judgmentReasoning: +2, efficiencyTeamFocus: 0 } }
+        ]
+    },
+    {
+        context: "Te enteras de que una tienda de ropa cercana va a cerrar y está liquidando todo al 70%.",
+        dilemma: "Sabes que muchos clientes irán allí en lugar de a tu tienda.",
+        question: "¿Qué haces con esa información?",
+        options: [
+            { text: "No haces nada. Es un evento externo que no puedes controlar.", scores: { ownership: -2, growthMindset: -2, agilityFlexibility: -1 } },
+            { text: "Se lo comunicas a tu gerente y le propones lanzar una pequeña promoción 'flash' para competir.", scores: { growthMindset: +3, ownership: +3, judgmentReasoning: +2 } },
+            { text: "Cuando los clientes mencionan la otra tienda, hablas mal de la calidad de sus productos.", scores: { judgmentReasoning: -3, customerFocus: -2, ownership: -1 } },
+            { text: "Vas tú mismo a la otra tienda en tu hora de almuerzo para ver si hay alguna oferta que valga la pena.", scores: { agilityFlexibility: 0, growthMindset: 0, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "Un cliente te pide 'la remera que usa tal famoso' que vio en una revista.",
+        dilemma: "Reconoces la remera, es de una marca de lujo que tu tienda no trabaja.",
+        question: "¿Cuál es tu respuesta?",
+        options: [
+            { text: "Le dices que no la tienes y terminas la conversación.", scores: { customerFocus: -2, grit: -1, ownership: -1 } },
+            { text: "Le dices 'esa marca no la trabajamos, pero tenemos esta otra que tiene un estilo muy similar y es de excelente calidad'.", scores: { agilityFlexibility: +2, customerFocus: +2, growthMindset: +1 } },
+            { text: "Buscas la marca en tu teléfono, le muestras al cliente dónde podría conseguirla.", scores: { customerFocus: +3, ownership: +1, efficiencyTeamFocus: -2 } },
+            { text: "Intentas convencerlo de que la remera que tienes es mejor que la que vio.", scores: { grit: +1, judgmentReasoning: -2, customerFocus: -1 } }
+        ]
+    },
+    {
+        context: "Estás explicando las bondades de un jean a un cliente y este te interrumpe diciendo: 'Ya sé todo eso, solo dime el precio'.",
+        dilemma: "El cliente parece irritado y con prisa.",
+        question: "¿Cómo reaccionas?",
+        options: [
+            { text: "Te disculpas y le dices el precio inmediatamente.", scores: { customerFocus: +2, agilityFlexibility: +2, judgmentReasoning: +1 } },
+            { text: "Terminas tu explicación, pensando que es importante que conozca todos los beneficios.", scores: { grit: +1, customerFocus: -2, judgmentReasoning: -2 } },
+            { text: "Le dices el precio y luego añades: '...y es un buen precio por la calidad del tejido'.", scores: { customerFocus: +1, grit: +1, growthMindset: 0 } },
+            { text: "Te ofendes un poco y le dices el precio de mala gana.", scores: { customerFocus: -3, ownership: -2, judgmentReasoning: -2 } }
+        ]
+    },
+    {
+        context: "Viene un pedido online para retirar en tienda. La persona que llega a retirar no es la misma que figura en la orden.",
+        dilemma: "Dice que el comprador es su pareja y que le pidió que lo viniera a buscar.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Le entregas el pedido. Parece una situación normal y no quieres crearle un problema.", scores: { customerFocus: +2, judgmentReasoning: -3, ownership: -2 } },
+            { text: "Le explicas que por seguridad, solo puedes entregarle el pedido al titular de la compra o a alguien con autorización escrita y copia del DNI.", scores: { ownership: +3, judgmentReasoning: +3, efficiencyTeamFocus: +1 } },
+            { text: "Le pides si puede llamar por teléfono al comprador para que te confirme verbalmente que autoriza la entrega.", scores: { agilityFlexibility: +2, judgmentReasoning: +1, customerFocus: +1 } },
+            { text: "Le dices que no puedes entregarle y que el comprador debe cancelar la orden y volver a hacerla con retiro a su nombre.", scores: { judgmentReasoning: 0, customerFocus: -2, efficiencyTeamFocus: -1 } }
+        ]
+    },
+    {
+        context: "Un cliente te cuenta que los auriculares que te compró hace 2 meses dejaron de funcionar.",
+        dilemma: "La garantía de la tienda es de 30 días, pero la garantía del fabricante es de 1 año. El proceso con el fabricante es lento y engorroso.",
+        question: "¿Cómo lo orientas?",
+        options: [
+            { text: "Le dices que la garantía de la tienda ya expiró y que no puedes hacer nada.", scores: { ownership: -1, customerFocus: -2, judgmentReasoning: 0 } },
+            { text: "Le explicas cómo funciona la garantía del fabricante y le das la dirección de la página web para que inicie el reclamo por su cuenta.", scores: { ownership: +2, customerFocus: +1, judgmentReasoning: +2 } },
+            { text: "Te ofreces a gestionar tú mismo el reclamo con el fabricante para facilitarle el proceso, aunque te tome tiempo de tu trabajo.", scores: { customerFocus: +3, ownership: +3, efficiencyTeamFocus: -2 } },
+            { text: "Le ofreces un descuento en unos auriculares nuevos para evitarle el trámite de la garantía.", scores: { agilityFlexibility: +2, customerFocus: +1, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "Estás solo en el local y tienes que ir al baño.",
+        dilemma: "No hay clientes ahora, pero podría entrar alguien en cualquier momento.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Vas rápidamente, dejando la tienda sola por menos de un minuto.", scores: { agilityFlexibility: +1, judgmentReasoning: -2, ownership: -1 } },
+            { text: "Pones el cartel de 'Vuelvo en 5 minutos' y cierras la puerta con llave.", scores: { ownership: +2, judgmentReasoning: +2, customerFocus: -1 } },
+            { text: "Llamas por teléfono al local de al lado, con cuyo vendedor tienes buena relación, y le pides si puede 'echar un ojo' un minuto.", scores: { agilityFlexibility: +2, efficiencyTeamFocus: +1, judgmentReasoning: -1 } },
+            { text: "Esperas a que llegue tu relevo o a que haya un momento de cierre, aunque te sientas incómodo.", scores: { grit: +2, ownership: +1, judgmentReasoning: +1 } }
+        ]
+    },
+    {
+        context: "Un cliente te pregunta por qué una remera básica blanca es más cara en tu tienda que en la competencia.",
+        dilemma: "Sabes que es por la calidad del algodón y la confección, pero son detalles que no se ven a simple vista.",
+        question: "¿Cómo justificas el precio?",
+        options: [
+            { text: "Le dices que es por la marca.", scores: { judgmentReasoning: -1, customerFocus: 0, grit: 0 } },
+            { text: "Le invitas a tocar la tela y le explicas sobre el tipo de algodón, el grosor y cómo eso se traduce en durabilidad y mejor caída.", scores: { customerFocus: +3, judgmentReasoning: +2, growthMindset: +1 } },
+            { text: "Le dices que 'la calidad tiene un precio' sin dar más detalles.", scores: { grit: -1, customerFocus: -1, judgmentReasoning: -1 } },
+            { text: "Reconoces que es más cara y le dices 'pero a veces tenemos descuentos, si quieres déjame tu email'.", scores: { agilityFlexibility: +1, customerFocus: +1, grit: -1 } }
+        ]
+    },
+    {
+        context: "Te toca hacer el inventario semanal, una tarea que odias porque es tediosa y repetitiva.",
+        dilemma: "Podrías hacerlo rápido y de forma superficial, o lento y con mucha atención al detalle.",
+        question: "¿Cuál es tu enfoque?",
+        options: [
+            { text: "Lo haces rápido y superficialmente. Un pequeño error de inventario no es grave.", scores: { ownership: -3, judgmentReasoning: -2, grit: -2 } },
+            { text: "Pides a un compañero que te ayude para terminar antes, aunque ambos lo hagan apurados.", scores: { efficiencyTeamFocus: -1, judgmentReasoning: -2, ownership: -1 } },
+            { text: "Te concentras y lo haces metódicamente, verificando dos veces cada sección, aunque te lleve más tiempo.", scores: { ownership: +3, grit: +2, judgmentReasoning: +2 } },
+            { text: "Pones música con tus auriculares para que la tarea sea menos aburrida, y la haces a un ritmo constante.", scores: { agilityFlexibility: +1, growthMindset: +1, grit: +1 } }
+        ]
+    },
+    {
+        context: "Un cliente te pide si le puedes cargar el celular mientras hace sus compras.",
+        dilemma: "Tienes un solo enchufe disponible detrás del mostrador y es donde cargas tu propio teléfono.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Le dices que no tienes enchufes disponibles.", scores: { customerFocus: -2, agilityFlexibility: 0, judgmentReasoning: 0 } },
+            { text: "Desenchufas tu teléfono y conectas el suyo.", scores: { customerFocus: +3, efficiencyTeamFocus: -1, agilityFlexibility: +1 } },
+            { text: "Le ofreces venderle un cargador portátil, explicando que así podrá cargarlo ahora y en cualquier otro lugar.", scores: { customerFocus: +1, growthMindset: +2, judgmentReasoning: +1 } },
+            { text: "Le explicas que no puedes por seguridad, pero le indicas dónde hay una estación de carga en el centro comercial.", scores: { customerFocus: +2, judgmentReasoning: +2, ownership: +1 } }
+        ]
+    },
+    {
+        context: "Llega el final de tu turno y estás agotado. Tu compañero del siguiente turno llega 15 minutos tarde.",
+        dilemma: "Tu gerente no está y podrías irte en tu horario, dejando la tienda sola por 15 minutos.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Te vas a la hora exacta. Cumpliste con tu horario.", scores: { ownership: -3, efficiencyTeamFocus: -2, judgmentReasoning: -2 } },
+            { text: "Esperas a que llegue tu compañero y le haces un comentario sarcástico sobre su puntualidad.", scores: { grit: 0, efficiencyTeamFocus: -2, judgmentReasoning: -1 } },
+            { text: "Esperas a que llegue y no dices nada, pero te vas con resentimiento.", scores: { grit: +1, ownership: +1, growthMindset: -1 } },
+            { text: "Esperas a que llegue y le dices 'Hola, todo tranquilo. Solo para que sepas, la próxima vez avísame si vienes tarde así me organizo'.", scores: { ownership: +3, judgmentReasoning: +2, efficiencyTeamFocus: +2 } }
+        ]
+    }
+    ],
+    'Marketing': [
+        // --- BANCO DE PREGUNTAS DE MARKETING (ROPA Y ACCESORIOS DE CELULAR) ---
+        {
+            context: "Lanzas una campaña en Instagram con un influencer de moda para promocionar una nueva línea de carcasas de celular personalizables.",
+            dilemma: "La campaña recibe críticas porque el influencer fue visto usando un teléfono sin carcasa en una historia personal, y la gente lo acusa de 'falso'.",
+            question: "¿Cómo manejas la crisis en redes?",
+            options: [
+                { text: "Borrar los comentarios negativos y pedirle al influencer que elimine su historia personal.", scores: { judgmentReasoning: -3, customerFocus: -2, ownership: -1 } },
+                { text: "Responder con humor desde la cuenta de la marca, con un post como 'Hasta los mejores necesitan un día libre. ¡Por eso nuestras carcasas son tan fáciles de poner y quitar!'", scores: { agilityFlexibility: +3, growthMindset: +2, customerFocus: +2 } },
+                { text: "Emitir un comunicado formal disculpándote y pausando la colaboración con el influencer.", scores: { judgmentReasoning: +1, ownership: +2, customerFocus: 0 } },
+                { text: "Ignorar la polémica, asumiendo que pasará en uno o dos días y continuar con la campaña como si nada.", scores: { grit: -2, ownership: -3, customerFocus: -1 } }
+            ]
+        },
+        {
+            context: "El equipo de ventas se queja de que la última promoción de '2x1 en remeras básicas' atrajo a muchos clientes, pero casi nadie compró productos de mayor margen.",
+            dilemma: "Cumpliste el objetivo de 'tráfico en tienda', pero no el de 'valor de ticket promedio'.",
+            question: "¿Qué propones para la siguiente promoción?",
+            options: [
+                { text: "Defender tu campaña, argumentando que cumpliste tu objetivo de tráfico y que vender productos caros es responsabilidad de los vendedores.", scores: { ownership: -2, efficiencyTeamFocus: -2, judgmentReasoning: -1 } },
+                { text: "Proponer una promoción de 'Lleva la segunda remera al 50%' para asegurar más ingresos por transacción.", scores: { judgmentReasoning: +2, growthMindset: +1, agilityFlexibility: +1 } },
+                { text: "Organizar una reunión con ventas para diseñar juntos una promoción que incentive la compra cruzada, como '20% de descuento en un jean por la compra de cualquier remera'.", scores: { efficiencyTeamFocus: +3, growthMindset: +2, judgmentReasoning: +3 } },
+                { text: "Descartar las promociones de descuento y enfocarte solo en campañas de branding y posicionamiento de marca.", scores: { ownership: -1, grit: -1, agilityFlexibility: -2 } }
+            ]
+        },
+        {
+            context: "Tu análisis de Google Ads muestra que la campaña para 'cables de carga rápida' tiene un costo por clic muy alto y pocas conversiones.",
+            dilemma: "Estás gastando mucho presupuesto en un segmento que no rinde, pero la gerencia insiste en que es un producto clave.",
+            question: "¿Qué acción tomas?",
+            options: [
+                { text: "Pausar la campaña y redirigir el presupuesto a las que sí funcionan, y luego informar a gerencia.", scores: { ownership: +2, judgmentReasoning: +2, agilityFlexibility: +1 } },
+                { text: "Dejar la campaña activa para no contradecir a la gerencia, pero reducir el presupuesto diario al mínimo.", scores: { ownership: -2, grit: -1, judgmentReasoning: -2 } },
+                { text: "Optimizar la campaña: crear anuncios más específicos, negativizar palabras clave y mejorar la página de destino para intentar mejorar el rendimiento.", scores: { grit: +3, growthMindset: +3, ownership: +2 } },
+                { text: "Presentar un informe a gerencia con los datos y proponer enfocar la campaña no en 'cables' sino en 'soluciones de carga para gamers', un nicho más rentable.", scores: { judgmentReasoning: +3, growthMindset: +2, customerFocus: +1 } }
+            ]
+        },
+         {
+        context: "Lanzas una campaña en Instagram con un influencer de moda para promocionar una nueva línea de carcasas de celular personalizables.",
+        dilemma: "La campaña recibe críticas porque el influencer fue visto usando un teléfono sin carcasa en una historia personal, y la gente lo acusa de 'falso'.",
+        question: "¿Cómo manejas la crisis en redes?",
+        options: [
+            { text: "Borrar los comentarios negativos y pedirle al influencer que elimine su historia personal.", scores: { judgmentReasoning: -3, customerFocus: -2, ownership: -1 } },
+            { text: "Responder con humor desde la cuenta de la marca, con un post como 'Hasta los mejores necesitan un día libre. ¡Por eso nuestras carcasas son tan fáciles de poner y quitar!'", scores: { agilityFlexibility: +3, growthMindset: +2, customerFocus: +2 } },
+            { text: "Emitir un comunicado formal disculpándote y pausando la colaboración con el influencer.", scores: { judgmentReasoning: +1, ownership: +2, customerFocus: 0 } },
+            { text: "Ignorar la polémica, asumiendo que pasará en uno o dos días y continuar con la campaña como si nada.", scores: { grit: -2, ownership: -3, customerFocus: -1 } }
+        ]
+    },
+    {
+        context: "El equipo de ventas se queja de que la última promoción de '2x1 en remeras básicas' atrajo a muchos clientes, pero casi nadie compró productos de mayor margen.",
+        dilemma: "Cumpliste el objetivo de 'tráfico en tienda', pero no el de 'valor de ticket promedio'.",
+        question: "¿Qué propones para la siguiente promoción?",
+        options: [
+            { text: "Defender tu campaña, argumentando que cumpliste tu objetivo de tráfico y que vender productos caros es responsabilidad de los vendedores.", scores: { ownership: -2, efficiencyTeamFocus: -2, judgmentReasoning: -1 } },
+            { text: "Proponer una promoción de 'Lleva la segunda remera al 50%' para asegurar más ingresos por transacción.", scores: { judgmentReasoning: +2, growthMindset: +1, agilityFlexibility: +1 } },
+            { text: "Organizar una reunión con ventas para diseñar juntos una promoción que incentive la compra cruzada, como '20% de descuento en un jean por la compra de cualquier remera'.", scores: { efficiencyTeamFocus: +3, growthMindset: +2, judgmentReasoning: +3 } },
+            { text: "Descartar las promociones de descuento y enfocarte solo en campañas de branding y posicionamiento de marca.", scores: { ownership: -1, grit: -1, agilityFlexibility: -2 } }
+        ]
+    },
+    {
+        context: "Tu análisis de Google Ads muestra que la campaña para 'cables de carga rápida' tiene un costo por clic muy alto y pocas conversiones.",
+        dilemma: "Estás gastando mucho presupuesto en un segmento que no rinde, pero la gerencia insiste en que es un producto clave.",
+        question: "¿Qué acción tomas?",
+        options: [
+            { text: "Pausar la campaña y redirigir el presupuesto a las que sí funcionan, y luego informar a gerencia.", scores: { ownership: +2, judgmentReasoning: +2, agilityFlexibility: +1 } },
+            { text: "Dejar la campaña activa para no contradecir a la gerencia, pero reducir el presupuesto diario al mínimo.", scores: { ownership: -2, grit: -1, judgmentReasoning: -2 } },
+            { text: "Optimizar la campaña: crear anuncios más específicos, negativizar palabras clave y mejorar la página de destino para intentar mejorar el rendimiento.", scores: { grit: +3, growthMindset: +3, ownership: +2 } },
+            { text: "Presentar un informe a gerencia con los datos y proponer enfocar la campaña no en 'cables' sino en 'soluciones de carga para gamers', un nicho más rentable.", scores: { judgmentReasoning: +3, growthMindset: +2, customerFocus: +1 } }
+        ]
+    },
+    {
+        context: "El equipo de producto desarrolló una nueva línea de remeras con tela 'orgánica y sustentable'.",
+        dilemma: "Tus encuestas iniciales muestran que a tu público objetivo principal le interesa más el diseño y el precio que la sustentabilidad.",
+        question: "¿Cómo enfocas la campaña de lanzamiento?",
+        options: [
+            { text: "Centrar toda la campaña en el mensaje de 'sustentabilidad', para intentar educar al mercado.", scores: { ownership: +1, judgmentReasoning: -1, customerFocus: -2 } },
+            { text: "Liderar la campaña con los diseños atractivos y usar el mensaje 'además, es sustentable' como un beneficio secundario.", scores: { judgmentReasoning: +3, customerFocus: +2, agilityFlexibility: +2 } },
+            { text: "Presentar los datos al equipo de producto y sugerir que el sobreprecio por la tela orgánica no se justifica y debería eliminarse.", scores: { grit: +1, efficiencyTeamFocus: +2, judgmentReasoning: +1 } },
+            { text: "Crear dos campañas separadas: una enfocada en diseño para el público general y otra de nicho enfocada en sustentabilidad para un público más pequeño.", scores: { growthMindset: +2, agilityFlexibility: +1, judgmentReasoning: 0 } }
+        ]
+    },
+    {
+        context: "Tienes una idea para un video de TikTok que podría volverse viral, pero es arriesgado y se aleja del tono 'corporativo' de la marca.",
+        dilemma: "Podría ser un gran éxito o un fracaso que genere críticas por 'querer parecer joven'.",
+        question: "¿Cuál es tu recomendación?",
+        options: [
+            { text: "Descartar la idea por ser demasiado arriesgada para la imagen de la marca.", scores: { grit: -2, judgmentReasoning: +1, agilityFlexibility: -1 } },
+            { text: "Presentar la idea a dirección con un análisis de riesgo y ejemplos de otras marcas que lo hicieron con éxito.", scores: { ownership: +3, judgmentReasoning: +2, growthMindset: +2 } },
+            { text: "Grabar el video con bajo presupuesto y publicarlo en una cuenta secundaria para testear la reacción antes de usar la cuenta oficial.", scores: { agilityFlexibility: +3, judgmentReasoning: +2, growthMindset: +2 } },
+            { text: "Lanzarlo sin consultar, confiando en tu instinto y esperando que los resultados hablen por sí mismos.", scores: { grit: +2, ownership: -2, judgmentReasoning: -3 } }
+        ]
+    },
+    {
+        context: "El presupuesto de marketing ha sido recortado un 30%, pero las metas de ventas de la empresa se mantienen igual.",
+        dilemma: "Tu jefe te pide un plan para lograr 'más con menos'.",
+        question: "¿En qué enfocas tu estrategia?",
+        options: [
+            { text: "En recortar la inversión en branding (que es difícil de medir) y volcar todo en anuncios de conversión directa.", scores: { judgmentReasoning: 0, efficiencyTeamFocus: +1, grit: +1 } },
+            { text: "En un análisis profundo de todos los canales para eliminar los de peor rendimiento y duplicar la inversión en los más rentables.", scores: { judgmentReasoning: +3, ownership: +2, efficiencyTeamFocus: +2 } },
+            { text: "En proponer la creación de contenido orgánico (blog, SEO, redes sociales) que requiere más tiempo que dinero.", scores: { growthMindset: +2, grit: +3, ownership: +2 } },
+            { text: "En explicarle a tu jefe que las metas son poco realistas y que deben ser ajustadas al nuevo presupuesto.", scores: { judgmentReasoning: +1, ownership: -1, grit: -1 } }
+        ]
+    },
+    {
+        context: "Un competidor lanza una línea de fundas de celular con un diseño casi idéntico a tu producto más vendido.",
+        dilemma: "Te están robando cuota de mercado con una copia.",
+        question: "¿Cuál es tu primera reacción de marketing?",
+        options: [
+            { text: "Lanzar una campaña de anuncios comparando directamente tu producto con la 'copia barata'.", scores: { agilityFlexibility: +1, judgmentReasoning: -2, customerFocus: -1 } },
+            { text: "Crear una campaña que resalte la autenticidad y la calidad de 'la original', sin mencionar directamente al competidor.", scores: { judgmentReasoning: +3, customerFocus: +2, growthMindset: +1 } },
+            { text: "Hablar con el equipo legal para enviar una carta de cese y desistimiento antes de tomar cualquier acción de marketing.", scores: { efficiencyTeamFocus: +1, judgmentReasoning: +2, ownership: +2 } },
+            { text: "Bajar el precio de tu producto para competir directamente con el de ellos.", scores: { agilityFlexibility: -1, judgmentReasoning: -2, efficiencyTeamFocus: -2 } }
+        ]
+    },
+    {
+        context: "El CEO quiere que la empresa empiece a usar Inteligencia Artificial en el marketing.",
+        dilemma: "No tienes claro cómo aplicarla de forma práctica y temes que sea solo una 'palabra de moda' sin estrategia detrás.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Contratar rápidamente una plataforma de IA y empezar a usarla para generar copys para redes sociales.", scores: { agilityFlexibility: +1, growthMindset: -1, judgmentReasoning: -2 } },
+            { text: "Investigar y presentar un informe con 3 casos de uso prácticos donde la IA podría mejorar resultados, como la personalización de emails o la optimización de pauta.", scores: { ownership: +3, judgmentReasoning: +3, growthMindset: +3 } },
+            { text: "Explicarle al CEO que la IA está sobrevalorada y que es mejor enfocarse en lo que ya funciona.", scores: { grit: -2, growthMindset: -3, judgmentReasoning: -1 } },
+            { text: "Organizar un brainstorming con el equipo para ver qué ideas surgen sobre el uso de la IA.", scores: { efficiencyTeamFocus: +2, growthMindset: +2, agilityFlexibility: +1 } }
+        ]
+    },
+    {
+        context: "El equipo de diseño te entrega una propuesta visual para una campaña de ropa que a ti te parece anticuada y poco atractiva.",
+        dilemma: "Ellos están muy orgullosos de su trabajo, y criticarlo podría dañar la relación entre departamentos.",
+        question: "¿Cómo das tu feedback?",
+        options: [
+            { text: "Aceptas el diseño para no generar conflicto. Lo importante es lanzar la campaña a tiempo.", scores: { efficiencyTeamFocus: +1, judgmentReasoning: -2, ownership: -2 } },
+            { text: "Les dices directamente que el diseño no funciona y que no se alinea con las tendencias actuales del mercado.", scores: { grit: +1, judgmentReasoning: 0, efficiencyTeamFocus: -2 } },
+            { text: "Buscas datos de campañas anteriores o de la competencia que muestren qué estilo visual funciona mejor y se los presentas como 'inspiración'.", scores: { judgmentReasoning: +3, efficiencyTeamFocus: +2, growthMindset: +1 } },
+            { text: "Propones hacer un test A/B con su diseño y otra versión que tú sugieras, para que los datos 'decidan' cuál es mejor.", scores: { agilityFlexibility: +2, judgmentReasoning: +3, ownership: +2 } }
+        ]
+    },
+    {
+        context: "El sitio web de la tienda tiene mucho tráfico pero una tasa de conversión muy baja. La gente mira pero no compra.",
+        dilemma: "No sabes en qué parte del proceso se van los clientes.",
+        question: "¿Cuál es tu primer paso para diagnosticar el problema?",
+        options: [
+            { text: "Proponer un rediseño completo de la página de inicio para hacerla más atractiva.", scores: { agilityFlexibility: 0, judgmentReasoning: -2, ownership: +1 } },
+            { text: "Instalar un mapa de calor (heatmap) y grabaciones de sesiones para ver visualmente dónde hacen clic los usuarios y dónde abandonan el proceso.", scores: { judgmentReasoning: +3, growthMindset: +2, customerFocus: +2 } },
+            { text: "Lanzar una encuesta de salida preguntando a los visitantes por qué no compraron.", scores: { customerFocus: +1, agilityFlexibility: +1, judgmentReasoning: +1 } },
+            { text: "Revisar Google Analytics para identificar en qué página específica (carrito, pago, etc.) se produce la mayor caída de usuarios.", scores: { judgmentReasoning: +2, grit: +1, ownership: +1 } }
+        ]
+    },
+    {
+        context: "Un cliente deja una reseña de 1 estrella en Google diciendo que la 'publicidad es engañosa' porque el color de la remera que compró online no es exactamente igual al de la foto.",
+        dilemma: "Sabes que las pantallas varían los colores, pero la reseña pública daña tu reputación.",
+        question: "¿Cómo respondes públicamente?",
+        options: [
+            { text: "No responder. Es una queja subjetiva y discutir solo le daría más visibilidad.", scores: { ownership: -3, judgmentReasoning: -2, customerFocus: -2 } },
+            { text: "Responder explicando técnicamente que la calibración de cada monitor puede afectar la percepción del color.", scores: { judgmentReasoning: -1, customerFocus: -1, grit: 0 } },
+            { text: "Responder pidiendo disculpas por su percepción y ofreciéndole un cambio o devolución gratuita para asegurar su satisfacción.", scores: { customerFocus: +3, ownership: +2, agilityFlexibility: +1 } },
+            { text: "Responder públicamente que 'miles de clientes están felices con el color' y que es un caso aislado.", scores: { judgmentReasoning: -3, customerFocus: -3, grit: +1 } }
+        ]
+    },
+    {
+        context: "Debes escribir el email para anunciar a tus suscriptores el lanzamiento de una nueva colección de ropa.",
+        dilemma: "El equipo de ventas quiere que el email se enfoque en los 'descuentos de lanzamiento', mientras que el equipo de branding quiere que se enfoque en la 'historia e inspiración' de la colección.",
+        question: "¿Cómo diseñas el email?",
+        options: [
+            { text: "Hacer caso a ventas y liderar con el descuento en el asunto. Es lo que genera aperturas.", scores: { efficiencyTeamFocus: +1, judgmentReasoning: 0, grit: 0 } },
+            { text: "Hacer caso a branding y contar la historia en el cuerpo del email, dejando el descuento para el final.", scores: { customerFocus: +1, judgmentReasoning: 0, ownership: 0 } },
+            { text: "Proponer enviar dos versiones (Test A/B): una con el asunto del descuento y otra con un asunto aspiracional, para ver cuál genera más ventas.", scores: { judgmentReasoning: +3, growthMindset: +3, agilityFlexibility: +2 } },
+            { text: "Mezclar todo: un asunto largo que mencione la historia y el descuento, y un cuerpo que intente hacer ambas cosas a la vez.", scores: { judgmentReasoning: -2, agilityFlexibility: -1, efficiencyTeamFocus: -1 } }
+        ]
+    },
+    {
+        context: "Tu jefe te pide un informe sobre el ROI (retorno de la inversión) de la última campaña con influencers.",
+        dilemma: "Es muy difícil atribuir ventas directas a la campaña, aunque sabes que generó mucha visibilidad y 'engagement'.",
+        question: "¿Cómo presentas los resultados?",
+        options: [
+            { text: "Presentas métricas de vanidad (alcance, likes, comentarios) para que el informe se vea positivo.", scores: { judgmentReasoning: -2, ownership: -1, grit: 0 } },
+            { text: "Intentas cruzar datos, como picos de tráfico web durante la campaña y el uso de códigos de descuento únicos para cada influencer.", scores: { judgmentReasoning: +3, grit: +2, growthMindset: +2 } },
+            { text: "Explicas que el objetivo principal era branding y no ventas directas, y que por lo tanto el ROI no es una métrica aplicable.", scores: { judgmentReasoning: 0, ownership: 0, agilityFlexibility: +1 } },
+            { text: "Admites que no puedes calcular el ROI y que la campaña fue un experimento.", scores: { ownership: +2, judgmentReasoning: +1, growthMindset: +1 } }
+        ]
+    },
+    {
+        context: "Estás a cargo de la estrategia de contenidos y notas que el blog de la empresa, aunque tiene artículos de calidad, no genera casi tráfico orgánico.",
+        dilemma: "El equipo invierte mucho tiempo en escribir, pero nadie lee los artículos.",
+        question: "¿Qué cambio propones?",
+        options: [
+            { text: "Sugerir que se deje de escribir en el blog para reasignar ese tiempo a otras tareas.", scores: { judgmentReasoning: 0, efficiencyTeamFocus: +1, grit: -1 } },
+            { text: "Proponer una estrategia de SEO: hacer un 'keyword research' para escribir sobre temas que la gente realmente busca y optimizar los artículos antiguos.", scores: { growthMindset: +3, judgmentReasoning: +3, ownership: +2 } },
+            { text: "Invertir presupuesto en promocionar los artículos del blog a través de Facebook Ads.", scores: { agilityFlexibility: +1, judgmentReasoning: -1, grit: 0 } },
+            { text: "Pedir a todo el equipo de la empresa que comparta los artículos en sus redes personales para aumentar la difusión.", scores: { efficiencyTeamFocus: -1, judgmentReasoning: -1, agilityFlexibility: +1 } }
+        ]
+    },
+    {
+        context: "Una nueva red social (ej. 'Clips') está ganando mucha popularidad en tu público objetivo.",
+        dilemma: "Tu equipo ya está sobrecargado gestionando Instagram, Facebook y TikTok.",
+        question: "¿Cuál es tu recomendación?",
+        options: [
+            { text: "Ignorarla. Es mejor hacer bien 3 redes que mal 4.", scores: { judgmentReasoning: +2, grit: -1, efficiencyTeamFocus: +1 } },
+            { text: "Crear un perfil y empezar a republicar el mismo contenido de TikTok.", scores: { agilityFlexibility: 0, judgmentReasoning: -2, growthMindset: -1 } },
+            { text: "Proponer un plan de prueba de un mes: reducir la frecuencia en Facebook (la red con menos interacción) y usar ese tiempo para experimentar en 'Clips'.", scores: { agilityFlexibility: +2, judgmentReasoning: +2, growthMindset: +2 } },
+            { text: "Pedir a tu jefe la contratación de un Community Manager extra para que se encargue de la nueva red.", scores: { ownership: 0, judgmentReasoning: -1, efficiencyTeamFocus: -2 } }
+        ]
+    },
+    {
+        context: "Descubres una herramienta que automatiza la publicación en redes sociales y podría ahorrarle al equipo 5 horas a la semana.",
+        dilemma: "La herramienta tiene un costo de 50 dólares al mes y tu presupuesto está muy ajustado.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "No la propones para evitar pedir más dinero.", scores: { ownership: -2, judgmentReasoning: -1, efficiencyTeamFocus: -1 } },
+            { text: "La pagas con tu propio dinero los primeros meses para demostrar su valor.", scores: { grit: +2, ownership: +1, judgmentReasoning: -2 } },
+            { text: "Presentas un caso a tu jefe, calculando el costo de las 5 horas de trabajo semanales del equipo y demostrando que la herramienta es en realidad un ahorro.", scores: { ownership: +3, judgmentReasoning: +3, efficiencyTeamFocus: +3 } },
+            { text: "Buscas una versión gratuita de la herramienta, aunque tenga muchas menos funcionalidades.", scores: { agilityFlexibility: +1, grit: +1, judgmentReasoning: 0 } }
+        ]
+    },
+    {
+        context: "El equipo de producto quiere lanzar una funda de celular en un color amarillo fosforescente que a ti te parece horrible.",
+        dilemma: "El equipo de producto insiste en que 'los colores audaces son tendencia'.",
+        question: "¿Cómo respondes como responsable de marketing?",
+        options: [
+            { text: "Te niegas a crear una campaña para ese color, argumentando que dañará la imagen de la marca.", scores: { grit: +1, efficiencyTeamFocus: -2, judgmentReasoning: -1 } },
+            { text: "Aceptas el desafío y creas una campaña de nicho, muy creativa, dirigida a un público que sí usa esos colores, quizás con el eslogan 'Atrévete a destacar'.", scores: { growthMindset: +3, agilityFlexibility: +2, customerFocus: +1 } },
+            { text: "Buscas datos de mercado o encuestas que demuestren que los colores más vendidos son los neutros para refutar su argumento.", scores: { judgmentReasoning: +2, efficiencyTeamFocus: +1, ownership: +1 } },
+            { text: "Haces una campaña de mínimo esfuerzo, con una sola publicación, para cumplir con el pedido pero sin gastar recursos.", scores: { ownership: -2, efficiencyTeamFocus: 0, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "Te piden organizar una sesión de fotos de la nueva colección de ropa.",
+        dilemma: "Puedes contratar modelos profesionales, lo que es caro, o usar empleados de la tienda como modelos, lo que es barato y 'auténtico' pero menos profesional.",
+        question: "¿Qué decides?",
+        options: [
+            { text: "Contratar modelos profesionales. La calidad de la imagen es lo más importante para vender ropa.", scores: { judgmentReasoning: +2, customerFocus: +1, efficiencyTeamFocus: -1 } },
+            { text: "Usar empleados. La autenticidad conecta más con los clientes y ahorra presupuesto.", scores: { agilityFlexibility: +1, efficiencyTeamFocus: +2, customerFocus: +1 } },
+            { text: "Hacer una sesión mixta: contratar un solo modelo profesional y complementarlo con empleados para mostrar diversidad.", scores: { judgmentReasoning: +1, agilityFlexibility: +2, efficiencyTeamFocus: +1 } },
+            { text: "Lanzar un concurso en redes sociales para que tus propios clientes sean los modelos de la campaña.", scores: { growthMindset: +3, customerFocus: +3, agilityFlexibility: +2 } }
+        ]
+    },
+    {
+        context: "Tu jefe te pide que le prepares 'un reporte de redes sociales' para mañana.",
+        dilemma: "El pedido es muy vago. Podrías darle un simple resumen de seguidores y likes, o un análisis profundo de la estrategia.",
+        question: "¿Qué le entregas?",
+        options: [
+            { text: "Un reporte rápido con las métricas principales (seguidores, alcance, likes). Es lo que seguramente espera.", scores: { judgmentReasoning: -1, efficiencyTeamFocus: +1, ownership: 0 } },
+            { text: "Le preguntas: 'Claro, ¿qué objetivo tienes con el reporte? ¿Quieres ver el crecimiento, la interacción o cómo estamos frente a la competencia? Así te preparo algo más útil'.", scores: { judgmentReasoning: +3, efficiencyTeamFocus: +2, ownership: +2 } },
+            { text: "Le preparas un reporte muy extenso con todas las métricas posibles para demostrar que trabajaste mucho.", scores: { grit: +2, judgmentReasoning: -2, efficiencyTeamFocus: -2 } },
+            { text: "Tomas un reporte anterior, actualizas los números y se lo envías.", scores: { ownership: -2, grit: -1, efficiencyTeamFocus: 0 } }
+        ]
+    },
+    {
+        context: "Una campaña de email marketing que diseñaste tuvo una tasa de apertura mucho más baja de lo esperado.",
+        dilemma: "Fue un fracaso en términos de alcance.",
+        question: "¿Cuál es tu primer análisis?",
+        options: [
+            { text: "Culpar al algoritmo de los proveedores de email (Gmail, Hotmail) que seguro lo enviaron a spam.", scores: { ownership: -3, judgmentReasoning: -2, growthMindset: -2 } },
+            { text: "Analizar el asunto del correo. Probablemente no fue lo suficientemente atractivo o fue demasiado 'vendedor'.", scores: { judgmentReasoning: +3, growthMindset: +2, ownership: +2 } },
+            { text: "Revisar el día y la hora del envío. Quizás no fue el momento óptimo para tu audiencia.", scores: { judgmentReasoning: +2, growthMindset: +1, agilityFlexibility: +1 } },
+            { text: "Asumir que a la gente ya no le interesan tus emails.", scores: { grit: -2, growthMindset: -2, ownership: -1 } }
+        ]
+    },
+    {
+        context: "El equipo de ventas te informa que los clientes se quejan de que las tallas de las remeras son 'más pequeñas de lo normal'.",
+        dilemma: "Esta información es crucial para el marketing y las descripciones de producto online.",
+        question: "¿Qué haces con este feedback?",
+        options: [
+            { text: "Lo ignoras. Es un problema de producción, no de marketing.", scores: { ownership: -3, customerFocus: -2, efficiencyTeamFocus: -2 } },
+            { text: "Añades inmediatamente una nota en la descripción de todas las remeras en la web que diga: 'Recomendamos pedir una talla más de la habitual'.", scores: { agilityFlexibility: +2, customerFocus: +3, ownership: +2 } },
+            { text: "Le comunicas el problema al equipo de producto y esperas su decisión antes de cambiar nada en la web.", scores: { efficiencyTeamFocus: +2, judgmentReasoning: +1, ownership: +1 } },
+            { text: "Creas una guía de tallas más detallada con medidas en centímetros para que los clientes puedan elegir mejor.", scores: { growthMindset: +2, judgmentReasoning: +2, customerFocus: +2 } }
+        ]
+    },
+    {
+        context: "Ganas un premio local a la 'Mejor Campaña de Marketing del Año'.",
+        dilemma: "Tienes la oportunidad de comunicar este logro.",
+        question: "¿Qué acción de marketing priorizas?",
+        options: [
+            { text: "Enviar un email a toda la base de datos de clientes para contarles la noticia.", scores: { customerFocus: +1, agilityFlexibility: +1, grit: 0 } },
+            { text: "Publicarlo en las redes sociales de la empresa y en tu perfil de LinkedIn.", scores: { efficiencyTeamFocus: +1, growthMindset: +1, ownership: +1 } },
+            { text: "Crear un 'press kit' y enviarlo a medios de comunicación y blogs locales para obtener cobertura de prensa.", scores: { judgmentReasoning: +2, growthMindset: +2, grit: +2 } },
+            { text: "Añadir el logo del premio en la página de inicio del sitio web y en la firma de los emails de la empresa.", scores: { judgmentReasoning: +1, agilityFlexibility: +2, customerFocus: +2 } }
+        ]
+    },
+    {
+        context: "Te das cuenta de que un competidor está usando exactamente las mismas palabras clave que tú en sus anuncios de Google, haciendo que suba el costo por clic para ambos.",
+        dilemma: "Están en una 'guerra de ofertas' que perjudica a los dos.",
+        question: "¿Cuál es tu estrategia a seguir?",
+        options: [
+            { text: "Aumentar tu oferta para superarlos y asegurarte de aparecer primero, aunque sea más caro.", scores: { grit: +2, judgmentReasoning: -2, efficiencyTeamFocus: -1 } },
+            { text: "Buscar un nuevo conjunto de palabras clave de 'cola larga' (long-tail) que sean menos competitivas.", scores: { agilityFlexibility: +2, growthMindset: +2, judgmentReasoning: +2 } },
+            { text: "Contactar informalmente al encargado de marketing de la competencia para proponer un 'pacto de no agresión' en ciertas palabras clave.", scores: { agilityFlexibility: 0, judgmentReasoning: -2, efficiencyTeamFocus: -1 } },
+            { text: "Enfocarte en mejorar el 'Quality Score' de tus anuncios (creatividad, landing page) para que Google te muestre más arriba pagando menos.", scores: { growthMindset: +3, judgmentReasoning: +3, ownership: +2 } }
+        ]
+    },
+    {
+        context: "El fotógrafo te entrega las fotos de la última colección de ropa y te das cuenta de que el retoque digital es excesivo y las modelos no se ven naturales.",
+        dilemma: "El plazo de entrega de la campaña es mañana y no hay tiempo para repetir las fotos.",
+        question: "¿Qué decides?",
+        options: [
+            { text: "Usar las fotos tal como están. 'Mejor hecho que perfecto'.", scores: { ownership: -2, judgmentReasoning: -1, grit: -1 } },
+            { text: "Pedirle al fotógrafo los archivos originales y tratar de hacer un retoque más suave tú mismo o con alguien del equipo.", scores: { grit: +2, agilityFlexibility: +1, ownership: +1 } },
+            { text: "Hablar con tu jefe, explicar la situación y proponer retrasar el lanzamiento 24 horas para poder solicitar una nueva edición al fotógrafo.", scores: { ownership: +3, judgmentReasoning: +3, customerFocus: +2 } },
+            { text: "Publicar las fotos y, si hay críticas, decir que fue una 'decisión artística'.", scores: { judgmentReasoning: -3, ownership: -2, customerFocus: -2 } }
+        ]
+    },
+    {
+        context: "Estás planeando el calendario de contenidos para el mes. Tienes dos ideas principales.",
+        dilemma: "Una es una campaña sobre '5 formas de combinar nuestros jeans', que es segura y útil. La otra es una campaña más emocional sobre 'la confianza que te da vestir bien', que es más abstracta.",
+        question: "¿Por cuál te inclinas?",
+        options: [
+            { text: "Por la campaña útil y segura. Es más fácil de ejecutar y los resultados son predecibles.", scores: { judgmentReasoning: +1, efficiencyTeamFocus: +1, growthMindset: -1 } },
+            { text: "Por la campaña emocional. El branding y la conexión con el cliente a largo plazo son más importantes.", scores: { customerFocus: +2, growthMindset: +2, judgmentReasoning: 0 } },
+            { text: "Hacer las dos: la campaña útil en el blog y la campaña emocional en Instagram y TikTok.", scores: { agilityFlexibility: +2, judgmentReasoning: +2, ownership: +2 } },
+            { text: "Hacer una encuesta en Instagram stories y que tu audiencia decida qué tipo de contenido prefiere ver.", scores: { customerFocus: +3, judgmentReasoning: +3, growthMindset: +1 } }
+        ]
+    },
+    {
+        context: "Un error en la configuración del email marketing provocó que se enviara un email de prueba con el asunto 'Test' y el cuerpo 'Lorem Ipsum' a toda tu base de datos.",
+        dilemma: "Es un error vergonzoso que muestra poca profesionalidad.",
+        question: "¿Cuál es tu siguiente email a la base de datos?",
+        options: [
+            { text: "No enviar nada y hacer como que no pasó, esperando que la gente lo olvide.", scores: { ownership: -3, judgmentReasoning: -2, customerFocus: -2 } },
+            { text: "Enviar inmediatamente un email de disculpa muy formal explicando el error técnico.", scores: { ownership: +2, judgmentReasoning: +1, customerFocus: +1 } },
+            { text: "Enviar un email con humor, con un asunto como 'A nuestro becario se le fue un dedo...' y ofrecer un pequeño descuento por las molestias.", scores: { agilityFlexibility: +3, customerFocus: +2, judgmentReasoning: +2 } },
+            { text: "Borrar de la base de datos a los usuarios que se quejaron.", scores: { ownership: -2, judgmentReasoning: -3, customerFocus: -3 } }
+        ]
+    },
+    {
+        context: "Tu empresa de accesorios para celular decide patrocinar un pequeño equipo local de e-sports.",
+        dilemma: "No tienes un gran presupuesto, pero quieres que el patrocinio se note.",
+        question: "¿Qué acción de bajo costo y alto impacto propones?",
+        options: [
+            { text: "Simplemente poner el logo de tu empresa en su camiseta.", scores: { judgmentReasoning: -1, growthMindset: -1, grit: 0 } },
+            { text: "Organizar un torneo online para la comunidad, donde el premio sea jugar una partida con el equipo que patrocinas.", scores: { growthMindset: +3, customerFocus: +2, agilityFlexibility: +2 } },
+            { text: "Crear una línea de fundas de celular de edición limitada con el logo del equipo y darles un porcentaje de las ventas.", scores: { efficiencyTeamFocus: +2, judgmentReasoning: +2, growthMindset: +2 } },
+            { text: "Hacer que los jugadores del equipo hagan 'takeovers' de tu cuenta de Instagram durante sus entrenamientos.", scores: { agilityFlexibility: +3, customerFocus: +1, judgmentReasoning: +1 } }
+        ]
+    },
+    {
+        context: "Te asignan un becario para que te ayude con tus tareas.",
+        dilemma: "Delegarle y enseñarle te tomará tiempo al principio, tiempo que podrías usar para ejecutar tus propias tareas más rápido.",
+        question: "¿Cómo lo gestionas?",
+        options: [
+            { text: "Le asignas tareas muy básicas y repetitivas (como programar posts) para que no te interrumpa.", scores: { efficiencyTeamFocus: -1, growthMindset: -2, ownership: -1 } },
+            { text: "Inviertes tiempo la primera semana en enseñarle a analizar métricas y a preparar borradores de informes, para que luego pueda ser un verdadero apoyo.", scores: { efficiencyTeamFocus: +3, growthMindset: +3, ownership: +3 } },
+            { text: "Haces tú mismo el trabajo importante y le dejas a él que 'observe' para que aprenda.", scores: { judgmentReasoning: -1, efficiencyTeamFocus: -2, growthMindset: -1 } },
+            { text: "Le pides que investigue a la competencia y te prepare un informe, una tarea que no es urgente pero que lo mantendrá ocupado.", scores: { agilityFlexibility: +1, efficiencyTeamFocus: 0, judgmentReasoning: 0 } }
+        ]
+    },
+    {
+        context: "El gerente de finanzas cuestiona el gasto en 'almuerzos con influencers', diciendo que no ve el retorno.",
+        dilemma: "Para ti, construir relaciones personales es clave en tu estrategia de PR.",
+        question: "¿Cómo defiendes esa partida de tu presupuesto?",
+        options: [
+            { text: "Le explicas que 'así funciona el mundo del marketing de influencers'.", scores: { judgmentReasoning: -2, grit: +1, efficiencyTeamFocus: -1 } },
+            { text: "Dejas de hacer los almuerzos para evitar el conflicto con finanzas.", scores: { ownership: -2, grit: -2, agilityFlexibility: -1 } },
+            { text: "Creas un pequeño informe mostrando la cobertura mediática o las publicaciones gratuitas que has conseguido de los influencers después de esas reuniones.", scores: { ownership: +3, judgmentReasoning: +3, grit: +2 } },
+            { text: "Le propones invitarlo al próximo almuerzo para que vea por sí mismo el valor de la relación.", scores: { agilityFlexibility: +2, efficiencyTeamFocus: +2, growthMindset: +1 } }
+        ]
+    },
+    {
+        context: "El video promocional de la nueva colección de ropa está listo, pero a último momento te das cuenta de que la canción que usaron no tiene la licencia comercial correcta.",
+        dilemma: "Cambiar la música implica re-editar todo el video y retrasar el lanzamiento.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Lanzas el video con esa música. Es poco probable que alguien se dé cuenta.", scores: { ownership: -3, judgmentReasoning: -3, grit: +1 } },
+            { text: "Buscas una canción de una librería de música libre de derechos y pides al editor que la reemplace de urgencia, aunque no quede tan bien.", scores: { ownership: +2, judgmentReasoning: +2, agilityFlexibility: +1 } },
+            { text: "Retrasas el lanzamiento hasta que puedas gestionar la licencia correcta de la canción original, asumiendo los costos y el retraso.", scores: { ownership: +3, judgmentReasoning: +3, grit: +1 } },
+            { text: "Publicas el video solo en aquellas plataformas donde los algoritmos de copyright son menos estrictos.", scores: { agilityFlexibility: -1, judgmentReasoning: -2, ownership: -1 } }
+        ]
+    },
+    {
+        context: "El equipo de atención al cliente te dice que muchos clientes preguntan cómo limpiar correctamente sus carcasas de celular para no dañarlas.",
+        dilemma: "Esta información no está en ningún lado.",
+        question: "¿Qué haces con esa información?",
+        options: [
+            { text: "Agradeces la información y la tienes en cuenta para futuras campañas.", scores: { ownership: -1, customerFocus: 0, growthMindset: -1 } },
+            { text: "Creas rápidamente un video corto para Reels/TikTok y un post para el blog titulado 'Cómo dejar tu carcasa como nueva en 3 simples pasos'.", scores: { customerFocus: +3, agilityFlexibility: +2, ownership: +2 } },
+            { text: "Le pides al equipo de producto que prepare un manual de cuidados para incluir en el packaging de las nuevas carcasas.", scores: { efficiencyTeamFocus: +2, judgmentReasoning: +2, customerFocus: +2 } },
+            { text: "Le sugieres al equipo de atención al cliente que escriban ellos mismos un texto estándar para responder a esa pregunta.", scores: { ownership: -2, efficiencyTeamFocus: -1, customerFocus: -1 } }
+        ]
+    },
+    {
+        context: "El Black Friday se acerca. Tu jefe quiere hacer la misma campaña del año pasado: '50% de descuento en todo'.",
+        dilemma: "Aunque funcionó, crees que es poco creativo y daña la percepción de la marca.",
+        question: "¿Qué propones?",
+        options: [
+            { text: "Hacer la misma campaña. Es lo más fácil y ya se sabe que funciona.", scores: { grit: -1, growthMindset: -2, judgmentReasoning: -1 } },
+            { text: "Proponer una idea diferente, como 'ofertas secretas' que se revelan cada hora, o 'compra un producto y te regalamos otro de igual o menor valor', para generar más engagement.", scores: { growthMindset: +3, agilityFlexibility: +2, judgmentReasoning: +2 } },
+            { text: "Aceptar la idea del 50%, pero sugiriendo excluir los productos de nueva colección para proteger los márgenes.", scores: { ownership: +1, judgmentReasoning: +2, efficiencyTeamFocus: +1 } },
+            { text: "Presentar datos que muestren que, aunque las ventas subieron el año pasado, la tasa de devolución también lo hizo y el valor de vida del cliente bajó.", scores: { judgmentReasoning: +3, ownership: +2, grit: +2 } }
+        ]
+    },
+    {
+        context: "Te ofrecen un espacio publicitario gratuito en una revista de moda local, pero es una revista que tiene una línea editorial con la que no estás de acuerdo.",
+        dilemma: "Es publicidad gratuita, pero podría asociar tu marca a valores que no compartes.",
+        question: "¿Aceptas?",
+        options: [
+            { text: "Sí. La publicidad es publicidad y si es gratis, mejor.", scores: { judgmentReasoning: -3, ownership: -1, efficiencyTeamFocus: +1 } },
+            { text: "No, y explicas a tu equipo que la coherencia de marca y los valores son más importantes que la publicidad gratuita.", scores: { ownership: +3, judgmentReasoning: +3, grit: +1 } },
+            { text: "Aceptas, pero pides control total sobre el diseño y el mensaje del anuncio para que solo muestre tu producto, sin asociarse a otros contenidos.", scores: { agilityFlexibility: +2, judgmentReasoning: +1, ownership: +1 } },
+            { text: "Le preguntas a tu jefe qué hacer.", scores: { ownership: -1, judgmentReasoning: 0, efficiencyTeamFocus: 0 } }
+        ]
+    },
+    {
+        context: "Debes elegir el nombre para una nueva colección de remeras.",
+        dilemma: "El equipo de diseño propone 'Urban Explorer'. Tú crees que 'City Nights' es más comercial y fácil de recordar.",
+        question: "¿Cómo se toma la decisión final?",
+        options: [
+            { text: "Impones 'City Nights' porque eres el responsable de marketing.", scores: { ownership: 0, efficiencyTeamFocus: -2, judgmentReasoning: -1 } },
+            { text: "Dejas que diseño elija. Ellos son los creativos y es importante que se sientan dueños del proyecto.", scores: { efficiencyTeamFocus: +2, judgmentReasoning: -1, ownership: -1 } },
+            { text: "Haces una encuesta rápida en las stories de Instagram con ambos nombres y dejas que la audiencia decida.", scores: { customerFocus: +3, agilityFlexibility: +2, judgmentReasoning: +2 } },
+            { text: "Buscas en Google Trends y herramientas de SEO cuál de los dos términos tiene más volumen de búsqueda.", scores: { judgmentReasoning: +3, growthMindset: +2, efficiencyTeamFocus: +1 } }
+        ]
+    },
+    {
+        context: "Un colega de otro departamento te pide 'un logo en alta' por email.",
+        dilemma: "No sabes para qué lo necesita. Podría ser para una presentación interna (donde un PNG sirve) o para imprimir una lona gigante (donde se necesita un vector).",
+        question: "¿Qué le envías?",
+        options: [
+            { text: "Un archivo PNG de alta resolución. Es lo más común y fácil.", scores: { efficiencyTeamFocus: +1, judgmentReasoning: -2, agilityFlexibility: 0 } },
+            { text: "Le respondes preguntando: '¡Claro! ¿Para qué lo vas a usar? Así te envío el formato perfecto'.", scores: { judgmentReasoning: +3, efficiencyTeamFocus: +2, ownership: +1 } },
+            { text: "Le envías una carpeta ZIP con todos los formatos de logo posibles (PNG, JPG, SVG, AI) para que elija.", scores: { customerFocus: 0, efficiencyTeamFocus: -1, agilityFlexibility: +1 } },
+            { text: "Le reenvías el email al diseñador gráfico para que se encargue él.", scores: { ownership: -2, efficiencyTeamFocus: -1, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "Tu jefe te pide que investigues a un nuevo competidor que está creciendo rápido.",
+        dilemma: "Puedes hacer un análisis rápido de sus redes sociales o un análisis profundo de toda su estrategia de marketing.",
+        question: "¿Qué enfoque tomas?",
+        options: [
+            { text: "Haces un análisis rápido de su Instagram y TikTok y le presentas las conclusiones principales.", scores: { efficiencyTeamFocus: +2, judgmentReasoning: -1, grit: -1 } },
+            { text: "Te suscribes a su newsletter, analizas su SEO, revisas sus anuncios, lees las reseñas de sus clientes y presentas un informe completo.", scores: { grit: +3, growthMindset: +2, judgmentReasoning: +3 } },
+            { text: "Le pides al becario que se encargue de la investigación.", scores: { ownership: -2, efficiencyTeamFocus: -1, judgmentReasoning: -1 } },
+            { text: "Compras uno de sus productos para analizar la calidad y el packaging.", scores: { customerFocus: +1, judgmentReasoning: +1, growthMindset: +1 } }
+        ]
+    },
+    {
+        context: "Estás en una reunión de planificación y tienes una idea, pero eres el miembro más junior del equipo.",
+        dilemma: "Te da miedo que tu idea sea rechazada o parezca tonta.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "No dices nada y dejas que los miembros senior hablen.", scores: { grit: -2, ownership: -2, growthMindset: -1 } },
+            { text: "Esperas un momento de silencio y dices tu idea, justificándola con un ejemplo o un dato si es posible.", scores: { grit: +3, ownership: +2, growthMindset: +2 } },
+            { text: "Se la comentas en privado a tu jefe después de la reunión.", scores: { ownership: +1, judgmentReasoning: 0, grit: 0 } },
+            { text: "La escribes en el chat de la reunión en lugar de decirla en voz alta.", scores: { agilityFlexibility: +1, grit: +1, ownership: 0 } }
+        ]
+    },
+    {
+        context: "La empresa decide lanzar una línea de remeras con frases polémicas de humor político.",
+        dilemma: "Como jefe de marketing, sabes que esto generará mucha prensa, pero también alienará a una parte importante de tu audiencia.",
+        question: "¿Cuál es tu recomendación a la dirección?",
+        options: [
+            { text: "Apoyar la idea. 'Que hablen bien o mal, pero que hablen'. El ruido mediático es bueno para la marca.", scores: { judgmentReasoning: -3, agilityFlexibility: +1, grit: +1 } },
+            { text: "Recomendar en contra, presentando datos demográficos de tu audiencia actual y el riesgo de perder clientes leales por una ganancia a corto plazo.", scores: { judgmentReasoning: +3, ownership: +2, customerFocus: +2 } },
+            { text: "Proponer lanzar la colección bajo una nueva marca o una 'cápsula' de edición limitada para no contaminar la marca principal.", scores: { agilityFlexibility: +2, judgmentReasoning: +2, growthMindset: +1 } },
+            { text: "Mantenerte neutral y ejecutar la campaña que la dirección decida.", scores: { ownership: -2, grit: -1, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "Se cae Instagram a nivel mundial el día que tenías planeado el lanzamiento online más importante del año.",
+        dilemma: "Todo el plan de comunicación dependía de esa plataforma.",
+        question: "¿Cuál es tu plan B?",
+        options: [
+            { text: "Cancelar todo y esperar a que vuelva a funcionar Instagram para lanzar otro día.", scores: { grit: -2, agilityFlexibility: -2, judgmentReasoning: -1 } },
+            { text: "Redirigir urgentemente el presupuesto de la pauta de Instagram a TikTok y a Google Ads.", scores: { agilityFlexibility: +3, judgmentReasoning: +2, grit: +2 } },
+            { text: "Enviar un email masivo a tu base de datos con el lanzamiento y un descuento especial 'porque las redes no nos detienen'.", scores: { customerFocus: +2, agilityFlexibility: +2, growthMindset: +1 } },
+            { text: "Llamar a tu jefe en pánico para que él decida qué hacer.", scores: { ownership: -3, judgmentReasoning: -2, grit: -2 } }
+        ]
+    },
+    {
+        context: "Tu jefe te felicita por el éxito de una campaña que en realidad fue ideada y ejecutada en gran parte por tu becario.",
+        dilemma: "Podrías aceptar todo el crédito.",
+        question: "¿Qué dices?",
+        options: [
+            { text: "Dices 'Gracias', aceptando el cumplido sin más.", scores: { ownership: -2, judgmentReasoning: -1, efficiencyTeamFocus: -2 } },
+            { text: "Dices 'Gracias, pero el verdadero mérito es de [Nombre del becario], hizo un trabajo fantástico con [tarea específica]'.", scores: { ownership: +3, efficiencyTeamFocus: +3, growthMindset: +2 } },
+            { text: "Dices 'Gracias, somos un gran equipo'.", scores: { efficiencyTeamFocus: +1, judgmentReasoning: 0, agilityFlexibility: +1 } },
+            { text: "Le cuentas a tus compañeros que en realidad la idea fue del becario, pero no se lo dices a tu jefe.", scores: { ownership: -1, judgmentReasoning: -2, efficiencyTeamFocus: 0 } }
+        ]
+    }
+    ],
+    'Administrativo': [
+        // --- BANCO DE PREGUNTAS DE ADMINISTRATIVO (ROPA Y ACCESORIOS DE CELULAR) ---
+        {
+            context: "Es fin de mes y estás procesando las comisiones de los vendedores. Uno de ellos reclama una venta que el sistema no le asignó.",
+            dilemma: "El vendedor insiste en que la venta es suya, pero no hay registro. Corregirlo manualmente requiere la aprobación de gerencia, que está de viaje.",
+            question: "¿Cómo procedes?",
+            options: [
+                { text: "Le dices al vendedor que debe esperar hasta que el gerente regrese, ya que no puedes alterar los registros sin autorización.", scores: { ownership: +2, judgmentReasoning: +2, efficiencyTeamFocus: -1 } },
+                { text: "Confías en la palabra del vendedor y haces el ajuste manual para pagarle a tiempo, planeando notificar al gerente a su regreso.", scores: { agilityFlexibility: +1, judgmentReasoning: -3, efficiencyTeamFocus: +1 } },
+                { text: "Buscas evidencia de la venta (cámaras, otros testimonios, etc.) y le envías un correo detallado al gerente para obtener su aprobación por escrito, aunque tarde más.", scores: { ownership: +3, grit: +2, judgmentReasoning: +3 } },
+                { text: "Le pides al vendedor que hable con el otro vendedor al que se le asignó la venta para que lo arreglen entre ellos.", scores: { ownership: -3, efficiencyTeamFocus: -2, judgmentReasoning: -1 } }
+            ]
+        },
+        {
+            context: "Recibes una caja con una nueva colección de remeras de un proveedor, pero la orden de compra decía 50 unidades y en la caja solo hay 48.",
+            dilemma: "El equipo de ventas necesita la mercadería con urgencia para una promoción que empieza mañana. Reportar la discrepancia podría retrasar la disponibilidad.",
+            question: "¿Cuál es tu acción inmediata?",
+            options: [
+                { text: "Ingresar las 48 remeras al sistema y notificar inmediatamente al proveedor sobre el faltante para que ajusten la factura.", scores: { ownership: +3, judgmentReasoning: +2, efficiencyTeamFocus: +2 } },
+                { text: "No ingresar nada al sistema hasta que el proveedor envíe las 2 remeras faltantes, para mantener los registros exactos.", scores: { judgmentReasoning: -2, efficiencyTeamFocus: -3, customerFocus: -2 } },
+                { text: "Ingresar 50 remeras al sistema para que ventas pueda empezar a trabajar y ya te encargarás de ajustar el inventario más adelante.", scores: { ownership: -3, judgmentReasoning: -3, agilityFlexibility: +1 } },
+                { text: "Entregar las 48 remeras a ventas y pedirles que te avisen si algún cliente pregunta por las que faltan.", scores: { ownership: -2, grit: -1, efficiencyTeamFocus: -1 } }
+            ]
+        },
+        {
+            context: "El gerente de la tienda te pide que pidas 'urgente' 500 bolsas de la marca, pero ves que todavía quedan 1000 en el depósito.",
+            dilemma: "Hacer un pedido innecesario ocupa espacio y afecta el flujo de caja, pero no quieres contradecir a tu superior.",
+            question: "¿Qué haces?",
+            options: [
+                { text: "Hacer el pedido tal como te lo solicitó, ya que es una orden directa.", scores: { ownership: -2, judgmentReasoning: -2, grit: -1 } },
+                { text: "Acercarte al gerente y decirle amablemente: 'Revisé el stock y vi que aún nos quedan 1000 bolsas. ¿El pedido es por alguna razón especial o para anticipar una gran promoción?'", scores: { ownership: +3, judgmentReasoning: +3, efficiencyTeamFocus: +2, growthMindset: +2 } },
+                { text: "Hacer un pedido más pequeño, por solo 100 bolsas, para cumplir parcialmente sin generar tanto exceso de stock.", scores: { agilityFlexibility: +1, judgmentReasoning: -1, ownership: 0 } },
+                { text: "No hacer el pedido y esperar a que el gerente te vuelva a preguntar, momento en el cual le mencionarás el stock actual.", scores: { ownership: -1, grit: -2, agilityFlexibility: -1 } }
+            ]
+        },
+           {
+        context: "Es fin de mes y estás procesando las comisiones de los vendedores. Un vendedor reclama una venta que el sistema no le asignó.",
+        dilemma: "El vendedor insiste en que la venta es suya, pero no hay registro. Corregirlo manualmente requiere la aprobación del gerente, que está de viaje.",
+        question: "¿Cómo procedes?",
+        options: [
+            { text: "Le dices al vendedor que debe esperar a que el gerente regrese, ya que no puedes alterar los registros sin autorización.", scores: { ownership: +2, judgmentReasoning: +2, efficiencyTeamFocus: -1 } },
+            { text: "Confías en la palabra del vendedor y haces el ajuste manual para pagarle a tiempo, planeando notificar al gerente a su regreso.", scores: { agilityFlexibility: +1, judgmentReasoning: -3, efficiencyTeamFocus: +1 } },
+            { text: "Buscas evidencia de la venta (cámaras, otros testimonios, etc.) y le envías un correo detallado al gerente para obtener su aprobación por escrito, aunque tarde más.", scores: { ownership: +3, grit: +2, judgmentReasoning: +3 } },
+            { text: "Le pides al vendedor que hable con el otro vendedor al que se le asignó la venta para que lo arreglen entre ellos.", scores: { ownership: -3, efficiencyTeamFocus: -2, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "Recibes una caja con una nueva colección de remeras de un proveedor, pero la orden de compra decía 50 unidades y en la caja solo hay 48.",
+        dilemma: "El equipo de ventas necesita la mercadería con urgencia para una promoción que empieza mañana. Reportar la discrepancia podría retrasar la disponibilidad.",
+        question: "¿Cuál es tu acción inmediata?",
+        options: [
+            { text: "Ingresar las 48 remeras al sistema y notificar inmediatamente al proveedor sobre el faltante para que ajusten la factura.", scores: { ownership: +3, judgmentReasoning: +2, efficiencyTeamFocus: +2 } },
+            { text: "No ingresar nada al sistema hasta que el proveedor envíe las 2 remeras faltantes, para mantener los registros exactos.", scores: { judgmentReasoning: -2, efficiencyTeamFocus: -3, customerFocus: -2 } },
+            { text: "Ingresar 50 remeras al sistema para que ventas pueda empezar a trabajar y ya te encargarás de ajustar el inventario más adelante.", scores: { ownership: -3, judgmentReasoning: -3, agilityFlexibility: +1 } },
+            { text: "Entregar las 48 remeras a ventas y pedirles que te avisen si algún cliente pregunta por las que faltan.", scores: { ownership: -2, grit: -1, efficiencyTeamFocus: -1 } }
+        ]
+    },
+    {
+        context: "El gerente de la tienda te pide que pidas 'urgente' 500 bolsas de la marca, pero ves que todavía quedan 1000 en el depósito.",
+        dilemma: "Hacer un pedido innecesario ocupa espacio y afecta el flujo de caja, pero no quieres contradecir a tu superior.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Hacer el pedido tal como te lo solicitó, ya que es una orden directa.", scores: { ownership: -2, judgmentReasoning: -2, grit: -1 } },
+            { text: "Acercarte al gerente y decirle amablemente: 'Revisé el stock y vi que aún nos quedan 1000 bolsas. ¿El pedido es por alguna razón especial o para anticipar una gran promoción?'", scores: { ownership: +3, judgmentReasoning: +3, efficiencyTeamFocus: +2, growthMindset: +2 } },
+            { text: "Hacer un pedido más pequeño, por solo 100 bolsas, para cumplir parcialmente sin generar tanto exceso de stock.", scores: { agilityFlexibility: +1, judgmentReasoning: -1, ownership: 0 } },
+            { text: "No hacer el pedido y esperar a que el gerente te vuelva a preguntar, momento en el cual le mencionarás el stock actual.", scores: { ownership: -1, grit: -2, agilityFlexibility: -1 } }
+        ]
+    },
+    {
+        context: "Dos gerentes te piden simultáneamente un informe urgente. Ambos afirman que es la máxima prioridad.",
+        dilemma: "Solo puedes completar una tarea a la vez y ambas son complejas.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Empiezas por el informe del gerente de mayor rango.", scores: { judgmentReasoning: -2, efficiencyTeamFocus: -1, ownership: 0 } },
+            { text: "Comunicarte con ambos, explicar el conflicto de prioridades y pedirles que decidan entre ellos o consulten con un superior común.", scores: { ownership: +3, judgmentReasoning: +3, efficiencyTeamFocus: +2 } },
+            { text: "Intentar hacer un poco de cada informe, alternando para mostrar progreso en ambos.", scores: { agilityFlexibility: -1, efficiencyTeamFocus: -2, grit: -1 } },
+            { text: "Elegir el que crees que tendrá un mayor impacto en el negocio e informar al otro gerente de un ligero retraso.", scores: { ownership: +2, judgmentReasoning: +2, agilityFlexibility: +1 } }
+        ]
+    },
+    {
+        context: "La fecha límite para presentar el informe de gastos de viaje del equipo es hoy. Un vendedor clave no te ha entregado sus recibos.",
+        dilemma: "Sin sus recibos, el informe estará incompleto y la empresa podría no reembolsarle sus gastos a tiempo.",
+        question: "¿Cuál es tu próximo paso?",
+        options: [
+            { text: "Presentar el informe sin sus gastos y decirle al vendedor que deberá esperar al próximo mes.", scores: { ownership: +1, judgmentReasoning: +1, efficiencyTeamFocus: -1 } },
+            { text: "Llamarlo por teléfono, explicarle la urgencia y pedirle que te envíe fotos de los recibos inmediatamente.", scores: { grit: +2, ownership: +2, judgmentReasoning: +2 } },
+            { text: "Pedir una extensión de la fecha límite a tu supervisor, explicando que estás esperando a un miembro del equipo.", scores: { ownership: -1, judgmentReasoning: 0, agilityFlexibility: +1 } },
+            { text: "Enviar un último correo electrónico al vendedor y a su gerente, poniendo en copia al departamento de finanzas, para dejar constancia del incumplimiento.", scores: { efficiencyTeamFocus: -2, judgmentReasoning: -1, ownership: +2 } }
+        ]
+    },
+    {
+        context: "El equipo de marketing necesita 10 modelos de fundas de celular para una sesión de fotos mañana. Te das cuenta de que 3 de esos modelos están en el depósito de otra sucursal.",
+        dilemma: "El servicio de mensajería interno no llegará a tiempo.",
+        question: "¿Cómo resuelves el problema?",
+        options: [
+            { text: "Le informas a marketing que solo podrás entregarles 7 de los 10 modelos.", scores: { ownership: -2, grit: -2, efficiencyTeamFocus: -1 } },
+            { text: "Coordinas con un administrativo de la otra sucursal para que te envíe los modelos en un servicio de moto-mensajería y te ofreces a cubrir el costo.", scores: { ownership: +3, agilityFlexibility: +2, judgmentReasoning: +2 } },
+            { text: "Vas tú mismo a buscar las fundas a la otra sucursal en tu hora de almuerzo.", scores: { grit: +3, ownership: +3, efficiencyTeamFocus: -1 } },
+            { text: "Le pides al equipo de marketing que elija otros 3 modelos de los que sí tienes en stock.", scores: { agilityFlexibility: +1, customerFocus: -1, judgmentReasoning: 0 } }
+        ]
+    },
+    {
+        context: "Te das cuenta de que un proceso recurrente, como la solicitud de material de oficina, es muy ineficiente y se basa en emails desordenados.",
+        dilemma: "Nadie se ha quejado, pero sabes que se pierde mucho tiempo.",
+        question: "¿Qué iniciativa tomas?",
+        options: [
+            { text: "No hacer nada. Si funciona, aunque sea mal, es mejor no cambiarlo.", scores: { growthMindset: -3, ownership: -2, efficiencyTeamFocus: -1 } },
+            { text: "Crear un simple formulario de Google Forms para centralizar los pedidos y proponer su uso al equipo en la próxima reunión.", scores: { growthMindset: +3, ownership: +3, efficiencyTeamFocus: +2 } },
+            { text: "Investigar un software complejo de gestión de inventario y presentar una propuesta que requerirá un gran presupuesto.", scores: { growthMindset: +1, judgmentReasoning: -1, efficiencyTeamFocus: -2 } },
+            { text: "Hablar con tu jefe sobre lo ineficiente que es el proceso, esperando que él proponga una solución.", scores: { ownership: +1, judgmentReasoning: 0, growthMindset: 0 } }
+        ]
+    },
+    {
+        context: "Un compañero te pide constantemente ayuda con tareas de Excel que a ti te resultan sencillas, lo que te retrasa en tu propio trabajo.",
+        dilemma: "No quieres parecer poco colaborador, pero su dependencia te está afectando.",
+        question: "¿Cómo manejas la situación?",
+        options: [
+            { text: "Seguir ayudándole siempre que lo pida para mantener un buen ambiente de equipo.", scores: { efficiencyTeamFocus: -2, grit: -1, ownership: -1 } },
+            { text: "La próxima vez que te pida ayuda, te sientas con él y le enseñas a usar la función que necesita, diciéndole: 'Así la próxima vez podrás hacerlo tú solo'.", scores: { growthMindset: +3, efficiencyTeamFocus: +2, judgmentReasoning: +3 } },
+            { text: "Le dices que estás muy ocupado y que busque tutoriales en YouTube.", scores: { efficiencyTeamFocus: 0, judgmentReasoning: 0, ownership: -1 } },
+            { text: "Hablas con tu supervisor sobre la situación para que él intervenga.", scores: { ownership: 0, efficiencyTeamFocus: -1, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "Tienes que organizar la cena de fin de año del equipo. La fecha límite para reservar el restaurante con descuento es hoy.",
+        dilemma: "La mitad del equipo aún no ha confirmado si asistirá.",
+        question: "¿Qué decisión tomas?",
+        options: [
+            { text: "Reservar para todo el equipo y arriesgarte a pagar de más si algunos no van.", scores: { agilityFlexibility: 0, judgmentReasoning: -2, ownership: +1 } },
+            { text: "No reservar y perder el descuento, esperando a tener todas las confirmaciones.", scores: { grit: -2, ownership: -2, efficiencyTeamFocus: -1 } },
+            { text: "Enviar un último mensaje al grupo del equipo diciendo: 'Chicos, la seña para el restaurante se hace en 2 horas. Por favor, confirmen ahora o se asume que no vienen'.", scores: { grit: +2, ownership: +2, judgmentReasoning: +2 } },
+            { text: "Reservar solo para los que confirmaron y avisar al resto que deberán reservar por su cuenta si deciden ir.", scores: { efficiencyTeamFocus: +2, judgmentReasoning: +1, ownership: +1 } }
+        ]
+    },
+    {
+        context: "Cometes un error al agendar una reunión importante para tu jefe, y dos participantes clave no pueden asistir en ese horario.",
+        dilemma: "Tu jefe está a punto de entrar a la reunión.",
+        question: "¿Qué haces de inmediato?",
+        options: [
+            { text: "No decir nada y esperar que nadie note la ausencia de los participantes clave.", scores: { ownership: -3, judgmentReasoning: -3, grit: -2 } },
+            { text: "Interceptar a tu jefe antes de que entre, explicarle tu error rápidamente y preguntarle si prefiere reprogramar o continuar.", scores: { ownership: +3, judgmentReasoning: +3, agilityFlexibility: +2 } },
+            { text: "Enviar un email a todos los participantes pidiendo disculpas y buscando un nuevo horario, mientras la reunión actual ya ha empezado.", scores: { judgmentReasoning: -1, efficiencyTeamFocus: -2, ownership: -1 } },
+            { text: "Echarle la culpa a los participantes ausentes, diciendo que 'cancelaron a último momento'.", scores: { ownership: -3, judgmentReasoning: -3, grit: 0 } }
+        ]
+    },
+    {
+        context: "Debes preparar una presentación con datos de ventas que te tiene que pasar el equipo comercial. La fecha límite es mañana.",
+        dilemma: "Les has enviado dos recordatorios y aún no te responden.",
+        question: "¿Cuál es tu siguiente acción?",
+        options: [
+            { text: "Esperar. Si no te los pasan, no es tu culpa no poder cumplir con la fecha límite.", scores: { ownership: -3, grit: -2, efficiencyTeamFocus: -2 } },
+            { text: "Te levantas, vas a sus escritorios y les preguntas amablemente si necesitan ayuda con algo para poder extraer los datos.", scores: { grit: +3, efficiencyTeamFocus: +2, ownership: +2 } },
+            { text: "Le envías un correo al gerente comercial, poniendo en copia a tu jefe, para escalar el problema.", scores: { judgmentReasoning: -1, ownership: +1, efficiencyTeamFocus: -1 } },
+            { text: "Buscas datos de reportes anteriores y armas la presentación con información desactualizada para poder entregar 'algo'.", scores: { grit: -1, judgmentReasoning: -3, ownership: -2 } }
+        ]
+    },
+    {
+        context: "Encuentras una carpeta con recibos de sueldo en la impresora compartida.",
+        dilemma: "Es información confidencial y no sabes de quién es.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "La dejas ahí, asumiendo que su dueño volverá a buscarla.", scores: { ownership: -3, judgmentReasoning: -2, efficiencyTeamFocus: -1 } },
+            { text: "La recoges sin mirar los nombres y se la entregas directamente al responsable de Recursos Humanos.", scores: { ownership: +3, judgmentReasoning: +3, efficiencyTeamFocus: +2 } },
+            { text: "Miras el nombre en el recibo para poder llevárselo directamente a esa persona.", scores: { judgmentReasoning: -2, ownership: +1, agilityFlexibility: +1 } },
+            { text: "La guardas en tu cajón y envías un email a toda la oficina diciendo 'Alguien olvidó documentos personales en la impresora'.", scores: { agilityFlexibility: -1, judgmentReasoning: 0, ownership: +1 } }
+        ]
+    },
+    {
+        context: "El equipo de ventas necesita un nuevo catálogo de productos impreso para un evento en dos semanas.",
+        dilemma: "La imprenta de siempre te pasa un presupuesto que excede en un 15% lo asignado. La imprenta más barata tiene malas reseñas online.",
+        question: "¿Qué decisión tomas?",
+        options: [
+            { text: "Contratar a la imprenta barata para cumplir con el presupuesto, arriesgándote a una mala calidad.", scores: { judgmentReasoning: -3, efficiencyTeamFocus: +1, customerFocus: -2 } },
+            { text: "Presentarle ambas opciones a tu jefe con tu recomendación de usar la imprenta de siempre y solicitar una aprobación para el costo extra.", scores: { ownership: +3, judgmentReasoning: +3, efficiencyTeamFocus: +1 } },
+            { text: "Negociar con la imprenta de siempre, explicándoles tu límite de presupuesto para ver si pueden igualarlo o acercarse.", scores: { grit: +2, growthMindset: +2, judgmentReasoning: +2 } },
+            { text: "Decirle a ventas que el presupuesto no alcanza y que deberán usar el catálogo digital en el evento.", scores: { agilityFlexibility: -1, customerFocus: -1, ownership: -1 } }
+        ]
+    },
+    {
+        context: "Tu supervisor te pide tu opinión honesta sobre un nuevo proceso de trabajo que él diseñó.",
+        dilemma: "Tú crees que el proceso es más complicado y generará más trabajo para el equipo administrativo.",
+        question: "¿Qué le dices?",
+        options: [
+            { text: "Le dices que el proceso parece excelente y que estás ansioso por implementarlo.", scores: { growthMindset: -2, judgmentReasoning: -2, ownership: -1 } },
+            { text: "Le dices directamente que no estás de acuerdo y le explicas todos los problemas que ves.", scores: { grit: +1, judgmentReasoning: 0, efficiencyTeamFocus: -2 } },
+            { text: "Le agradeces por compartirlo y le preguntas: '¿Podemos hacer una prueba piloto de una semana con el equipo para ver cómo funciona en la práctica y recoger feedback?'.", scores: { agilityFlexibility: +2, judgmentReasoning: +2, growthMindset: +2 } },
+            { text: "Valoras los puntos positivos y luego le señalas tus preocupaciones de forma constructiva: 'Me gusta cómo resuelve X, pero me pregunto si el paso Y podría ralentizarnos. ¿Qué te parece si...?'.", scores: { judgmentReasoning: +3, efficiencyTeamFocus: +2, ownership: +2 } }
+        ]
+    },
+    {
+        context: "Se acerca la fecha de pago a proveedores. Te das cuenta de que falta la aprobación final de tu jefe en una factura importante, y él está de vacaciones sin acceso a email.",
+        dilemma: "Si no se paga, el proveedor podría suspender el servicio, afectando a toda la operación.",
+        question: "¿Cuál es tu plan de acción?",
+        options: [
+            { text: "No hacer nada. Sin la aprobación formal, es imposible procesar el pago.", scores: { ownership: -3, judgmentReasoning: +1, grit: -2 } },
+            { text: "Intentar contactar a tu jefe por todos los medios posibles (WhatsApp, llamada), aunque esté de vacaciones.", scores: { grit: +2, judgmentReasoning: 0, ownership: +1 } },
+            { text: "Buscar al jefe de tu jefe, explicarle la situación y la urgencia, y pedirle una aprobación de emergencia.", scores: { ownership: +3, judgmentReasoning: +3, agilityFlexibility: +2 } },
+            { text: "Hablar con el proveedor, explicarle la situación y negociar una extensión del pago de una semana.", scores: { customerFocus: +1, judgmentReasoning: +2, grit: +1 } }
+        ]
+    },
+    {
+        context: "El sistema informático de la empresa se cae. No puedes acceder a tus archivos ni al correo.",
+        dilemma: "Tienes varias tareas con fecha límite para hoy.",
+        question: "¿Cómo usas tu tiempo mientras esperas?",
+        options: [
+            { text: "Te relajas y socializas con tus compañeros. No hay nada que se pueda hacer.", scores: { grit: -3, ownership: -2, efficiencyTeamFocus: -2 } },
+            { text: "Llamas al soporte técnico cada 10 minutos pidiendo una actualización.", scores: { grit: 0, efficiencyTeamFocus: -2, judgmentReasoning: -2 } },
+            { text: "Trabajas en tareas que no requieran conexión, como planificar la semana, ordenar archivos físicos o preparar borradores en un documento local.", scores: { grit: +3, ownership: +3, agilityFlexibility: +2 } },
+            { text: "Preguntas a tus compañeros de equipo si hay algo en lo que puedas ayudarles que no requiera conexión.", scores: { efficiencyTeamFocus: +2, growthMindset: +2, ownership: +1 } }
+        ]
+    },
+    {
+        context: "Estás a cargo de la logística de un evento. El día del evento, la empresa de catering llama para decir que llegará 30 minutos tarde.",
+        dilemma: "Los invitados, incluyendo clientes importantes, están por llegar.",
+        question: "¿Qué haces inmediatamente?",
+        options: [
+            { text: "Entrar en pánico y comunicarle el problema a tu jefe sin ninguna solución propuesta.", scores: { ownership: -2, grit: -2, judgmentReasoning: -2 } },
+            { text: "Recibir a los invitados y no mencionar el problema, esperando que no se den cuenta del retraso.", scores: { ownership: -3, judgmentReasoning: -3, customerFocus: -1 } },
+            { text: "Buscar una solución temporal: pedirle al bar que sirva bebidas y buscar si hay snacks en la oficina para ofrecer mientras llega el catering.", scores: { agilityFlexibility: +3, ownership: +2, judgmentReasoning: +2 } },
+            { text: "Llamar a la empresa de catering y quejarte enérgicamente, exigiéndoles que lleguen antes.", scores: { grit: +1, judgmentReasoning: -1, efficiencyTeamFocus: -2 } }
+        ]
+    },
+    {
+        context: "Te das cuenta de que la empresa está pagando por 5 licencias de un software que solo usan 2 personas.",
+        dilemma: "Gestionar el cambio de plan es un proceso burocrático y tedioso.",
+        question: "¿Cuál es tu actitud?",
+        options: [
+            { text: "Lo ignoras. No es tu responsabilidad directa y es mucho trabajo para un ahorro pequeño.", scores: { ownership: -3, judgmentReasoning: -1, efficiencyTeamFocus: -1 } },
+            { text: "Le mencionas a tu jefe casualmente que 'crees que se está pagando de más', esperando que él tome la iniciativa.", scores: { ownership: -1, grit: -1, judgmentReasoning: 0 } },
+            { text: "Envías un correo a los 5 usuarios preguntando si usan el software, para confirmar tu sospecha.", scores: { ownership: +1, judgmentReasoning: +1, efficiencyTeamFocus: +1 } },
+            { text: "Inicias el proceso para dar de baja las 3 licencias sobrantes, documentando el ahorro de costos para justificar tu tiempo invertido.", scores: { ownership: +3, grit: +2, efficiencyTeamFocus: +2 } }
+        ]
+    },
+    {
+        context: "Un nuevo vendedor guarda sus reportes en una carpeta personal en lugar de en la carpeta compartida del equipo.",
+        dilemma: "Esto dificulta que los demás accedan a la información cuando él no está.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Mueves sus archivos a la carpeta correcta sin decirle nada.", scores: { ownership: 0, efficiencyTeamFocus: +1, judgmentReasoning: -1 } },
+            { text: "Se lo comentas al gerente para que hable con él.", scores: { ownership: -1, efficiencyTeamFocus: -1, judgmentReasoning: 0 } },
+            { text: "Te acercas y amablemente le explicas: 'Hola, vi que guardas los reportes aquí. ¿Te molestaría si los guardas en la carpeta del equipo? Así todos podemos acceder si te tomas vacaciones'.", scores: { efficiencyTeamFocus: +3, judgmentReasoning: +2, growthMindset: +1 } },
+            { text: "No haces nada. Es su forma de organizarse.", scores: { ownership: -3, efficiencyTeamFocus: -3, judgmentReasoning: -2 } }
+        ]
+    },
+    {
+        context: "Debes escribir el acta de una reunión muy caótica donde todos hablaban a la vez.",
+        dilemma: "No estás seguro de cuáles fueron las decisiones finales.",
+        question: "¿Cómo te aseguras de que el acta sea correcta?",
+        options: [
+            { text: "Escribes lo que mejor recuerdas y la envías. Si hay errores, ya te corregirán.", scores: { grit: -1, judgmentReasoning: -2, ownership: -2 } },
+            { text: "Pides la grabación de la reunión para escucharla de nuevo con calma.", scores: { grit: +2, judgmentReasoning: +2, ownership: +1 } },
+            { text: "Escribes un borrador con los puntos principales y las decisiones que crees haber entendido, y la envías pidiendo a los participantes que la validen o corrijan antes de la versión final.", scores: { judgmentReasoning: +3, efficiencyTeamFocus: +2, ownership: +2 } },
+            { text: "Le pides a otro compañero que también estuvo en la reunión que escriba el acta por ti.", scores: { ownership: -3, efficiencyTeamFocus: -2, grit: -2 } }
+        ]
+    },
+    {
+        context: "El equipo de marketing te pide con urgencia una lista de los '10 accesorios más vendidos' para una campaña.",
+        dilemma: "Sacar ese reporte del sistema es un proceso manual que te llevará al menos una hora.",
+        question: "¿Cómo respondes?",
+        options: [
+            { text: "Les dices que ahora estás muy ocupado y que se los pasarás al final del día.", scores: { customerFocus: -1, efficiencyTeamFocus: -1, judgmentReasoning: 0 } },
+            { text: "Pausas tus otras tareas y te pones a trabajar en el reporte de inmediato, ya que es urgente.", scores: { customerFocus: +2, agilityFlexibility: +2, grit: +1 } },
+            { text: "Les pasas una lista aproximada 'de memoria' con los que crees que son los más vendidos para que puedan empezar a trabajar.", scores: { agilityFlexibility: +1, judgmentReasoning: -3, efficiencyTeamFocus: +1 } },
+            { text: "Les explicas que te tomará una hora y les preguntas si para esa hora todavía les sirve, para gestionar sus expectativas.", scores: { judgmentReasoning: +3, efficiencyTeamFocus: +2, ownership: +2 } }
+        ]
+    },
+    {
+        context: "Estás a cargo de la caja chica. Un vendedor te pide dinero para tomar un taxi y visitar a un cliente, pero no tiene un recibo para justificarlo.",
+        dilemma: "La política es estricta: 'sin recibo no hay reembolso', pero no quieres obstaculizar una posible venta.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Le niegas el dinero, apegándote a la política.", scores: { ownership: +2, judgmentReasoning: +2, efficiencyTeamFocus: -1 } },
+            { text: "Le das el dinero de tu propio bolsillo y le dices que te lo devuelva después.", scores: { agilityFlexibility: +1, ownership: -1, judgmentReasoning: -2 } },
+            { text: "Le das el dinero de la caja chica y le pides que por favor no se olvide de pedir un recibo y traerlo al día siguiente.", scores: { customerFocus: +1, judgmentReasoning: -1, ownership: 0 } },
+            { text: "Le sugieres que use una app de transporte que envíe recibo por email para poder cumplir con la política.", scores: { growthMindset: +2, judgmentReasoning: +3, efficiencyTeamFocus: +2 } }
+        ]
+    },
+    {
+        context: "Te asignan un proyecto para organizar el archivo físico de la oficina, una tarea grande y que nadie quiere hacer.",
+        dilemma: "No hay una fecha límite clara.",
+        question: "¿Cómo lo abordas?",
+        options: [
+            { text: "Lo dejas para cuando tengas 'tiempo libre', lo que probablemente signifique nunca.", scores: { grit: -3, ownership: -3, efficiencyTeamFocus: -1 } },
+            { text: "Lo divides en pequeñas tareas y dedicas 30 minutos fijos cada día para avanzar de a poco.", scores: { grit: +3, ownership: +2, judgmentReasoning: +2 } },
+            { text: "Intentas delegar la mayor parte del trabajo al pasante o al personal de limpieza.", scores: { ownership: -2, efficiencyTeamFocus: -2, judgmentReasoning: -1 } },
+            { text: "Le propones a tu jefe un plan de digitalización para eliminar el archivo físico, aunque sea un proyecto más grande.", scores: { growthMindset: +3, ownership: +2, judgmentReasoning: +1 } }
+        ]
+    },
+    {
+        context: "Un proveedor te envía por error un email que era para tu jefe, donde se queja de la 'lentitud' de tu empresa para procesar los pagos.",
+        dilemma: "Es una información incómoda que tu jefe no ha visto.",
+        question: "¿Qué haces con el email?",
+        options: [
+            { text: "Lo borras y haces de cuenta que nunca lo recibiste.", scores: { ownership: -3, judgmentReasoning: -3, grit: -1 } },
+            { text: "Se lo reenvías a tu jefe sin comentarios.", scores: { ownership: 0, judgmentReasoning: -1, efficiencyTeamFocus: 0 } },
+            { text: "Vas a hablar con tu jefe, le muestras el email y le preguntas si hay algo que puedas hacer para mejorar el proceso de pagos.", scores: { ownership: +3, judgmentReasoning: +3, growthMindset: +2 } },
+            { text: "Respondes directamente al proveedor disculpándote en nombre de la empresa y asegurándole que revisarás el proceso.", scores: { customerFocus: +2, ownership: +2, judgmentReasoning: +1 } }
+        ]
+    },
+    {
+        context: "Debes reservar un vuelo para un directivo. Hay un vuelo a las 8 AM que cuesta 100 dólares y otro a las 9 AM que cuesta 250 dólares.",
+        dilemma: "La política es elegir siempre la opción más económica. El directivo es conocido por no gustarle madrugar.",
+        question: "¿Qué vuelo reservas?",
+        options: [
+            { text: "El de las 8 AM, porque la política es clara y debes optimizar los costos.", scores: { ownership: +2, judgmentReasoning: +2, efficiencyTeamFocus: +1 } },
+            { text: "El de las 9 AM, para evitar una queja del directivo.", scores: { customerFocus: +1, judgmentReasoning: -2, ownership: -1 } },
+            { text: "Le envías un email al directivo con ambas opciones, mencionando la diferencia de precio y la política, y le pides que elija.", scores: { ownership: +3, judgmentReasoning: +3, customerFocus: +1 } },
+            { text: "Reservas el de las 8 AM y no le dices nada, asumiendo que deberá cumplir.", scores: { grit: 0, judgmentReasoning: -1, customerFocus: -2 } }
+        ]
+    },
+    {
+        context: "El equipo de ventas ha dejado la sala de reuniones muy desordenada después de una capacitación.",
+        dilemma: "No es tu responsabilidad limpiarla, pero en 15 minutos tienes una reunión con un proveedor importante en esa misma sala.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Buscas al responsable de ventas y le pides que limpie el desorden que dejó su equipo.", scores: { ownership: +1, efficiencyTeamFocus: -1, judgmentReasoning: 0 } },
+            { text: "Ordenas tú mismo la sala rápidamente para causar una buena impresión al proveedor.", scores: { ownership: +3, grit: +2, customerFocus: +2 } },
+            { text: "Le pides al proveedor si pueden reunirse en la cafetería de al lado en lugar de en la oficina.", scores: { agilityFlexibility: +2, judgmentReasoning: -1, customerFocus: -1 } },
+            { text: "Le sacas una foto al desorden y se la envías al gerente de ventas para quejarte.", scores: { ownership: -2, grit: -1, efficiencyTeamFocus: -2 } }
+        ]
+    },
+    {
+        context: "Se rompe el único microondas de la oficina.",
+        dilemma: "No es una urgencia operativa, pero afecta la moral y el bienestar del equipo.",
+        question: "¿Cuál es tu nivel de implicación?",
+        options: [
+            { text: "Esperar a que alguien más lo reporte. No es tu tarea principal.", scores: { ownership: -3, efficiencyTeamFocus: -2, grit: -2 } },
+            { text: "Reportarlo al departamento de mantenimiento y esperar a que lo solucionen.", scores: { ownership: +1, judgmentReasoning: +1, efficiencyTeamFocus: +1 } },
+            { text: "Reportarlo y, además, hacer un seguimiento diario para asegurarte de que se resuelva rápido, comunicando al equipo el estado.", scores: { ownership: +2, grit: +2, efficiencyTeamFocus: +2 } },
+            { text: "Organizar una colecta entre los compañeros para comprar uno nuevo y no tener que esperar.", scores: { agilityFlexibility: +1, judgmentReasoning: -2, efficiencyTeamFocus: -1 } }
+        ]
+    },
+    {
+        context: "Un compañero se va de vacaciones y te delega una tarea importante con fecha límite para el viernes.",
+        dilemma: "Al revisar la tarea el jueves, te das cuenta de que es mucho más compleja de lo que parecía y no llegarás a tiempo.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Trabajas hasta tarde e intentas terminarla, aunque la entregues con errores o incompleta.", scores: { grit: +2, judgmentReasoning: -2, ownership: +1 } },
+            { text: "Informas inmediatamente a tu supervisor, le explicas la situación y la complejidad inesperada, y le preguntas cómo priorizar.", scores: { ownership: +3, judgmentReasoning: +3, efficiencyTeamFocus: +2 } },
+            { text: "Contactas a tu compañero de vacaciones para pedirle ayuda o que te aclare cómo hacerlo.", scores: { judgmentReasoning: -1, efficiencyTeamFocus: -2, ownership: -1 } },
+            { text: "Simplemente no la entregas y esperas a que tu compañero vuelva para que la termine.", scores: { ownership: -3, grit: -3, judgmentReasoning: -3 } }
+        ]
+    },
+    {
+        context: "Estás a cargo de comprar los pasajes para un viaje de equipo. Si los compras hoy, cuestan $200 cada uno.",
+        dilemma: "Hay un rumor de que mañana podría salir una promoción y costar $150, pero también podrían subir a $250.",
+        question: "¿Qué decisión tomas?",
+        options: [
+            { text: "Comprar los pasajes hoy para asegurar el precio conocido y no arriesgarte a un aumento.", scores: { ownership: +2, judgmentReasoning: +2, efficiencyTeamFocus: +1 } },
+            { text: "Esperar a mañana, asumiendo el riesgo con la esperanza de ahorrarle dinero a la empresa.", scores: { agilityFlexibility: +1, judgmentReasoning: -2, grit: +1 } },
+            { text: "Consultar con tu supervisor, presentarle el dilema y pedirle que él tome la decisión final.", scores: { ownership: +1, judgmentReasoning: +1, efficiencyTeamFocus: +2 } },
+            { text: "Comprar la mitad de los pasajes hoy y la otra mitad mañana para diversificar el riesgo.", scores: { agilityFlexibility: -1, judgmentReasoning: -2, efficiencyTeamFocus: -2 } }
+        ]
+    },
+    {
+        context: "Un mensajero llega con un paquete urgente para un empleado que hoy trabaja desde casa.",
+        dilemma: "El contenido parece importante y sensible al tiempo.",
+        question: "¿Qué haces con el paquete?",
+        options: [
+            { text: "Dejarlo en el escritorio del empleado para cuando vuelva a la oficina.", scores: { ownership: -1, judgmentReasoning: -1, efficiencyTeamFocus: 0 } },
+            { text: "Contactar inmediatamente al empleado, informarle del paquete y preguntarle cómo prefiere proceder.", scores: { efficiencyTeamFocus: +2, judgmentReasoning: +2, ownership: +2 } },
+            { text: "Abrir el paquete para ver si es realmente urgente y decidir en base a eso.", scores: { judgmentReasoning: -3, ownership: -2, grit: 0 } },
+            { text: "Guardarlo en tu cajón y ponerte un recordatorio para dárselo cuando lo veas.", scores: { ownership: -1, judgmentReasoning: 0, grit: -1 } }
+        ]
+    },
+    {
+        context: "Tu jefe te pide que busques tres presupuestos para un nuevo proveedor.",
+        dilemma: "El primer proveedor que encuentras es excelente y tiene un precio justo. Buscar otros dos te llevará toda la tarde.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Presentas solo a ese proveedor, explicando que es la mejor opción y que buscar más sería una pérdida de tiempo.", scores: { grit: -1, judgmentReasoning: -1, efficiencyTeamFocus: +1 } },
+            { text: "Cumples con la solicitud y buscas otros dos proveedores para comparar, aunque creas que el primero es el mejor.", scores: { ownership: +2, judgmentReasoning: +2, grit: +2 } },
+            { text: "Inventas dos presupuestos falsos que sean peores que el primero para que tu opción preferida sea la elegida.", scores: { judgmentReasoning: -3, ownership: -3, grit: 0 } },
+            { text: "Le preguntas a tu jefe: 'Encontré esta opción excelente. ¿Aún necesitas que investigue dos alternativas más o prefieres que avancemos con esta?'", scores: { agilityFlexibility: +1, judgmentReasoning: +1, efficiencyTeamFocus: +2 } }
+        ]
+    },
+    {
+        context: "El calendario de la sala de reuniones está siempre desorganizado. La gente reserva y no aparece.",
+        dilemma: "Esto crea confusión y pérdida de tiempo para todos.",
+        question: "¿Qué haces al respecto?",
+        options: [
+            { text: "Quejarte con tus compañeros sobre lo desorganizado que está todo.", scores: { efficiencyTeamFocus: -2, ownership: -1, grit: -1 } },
+            { text: "Proponer en la próxima reunión de equipo crear unas sencillas 'normas de uso' para el calendario y ofrecerte a enviarlas por correo.", scores: { growthMindset: +3, ownership: +3, judgmentReasoning: +2 } },
+            { text: "Empezar a borrar las reuniones de la gente que sabes que suele reservar y no ir.", scores: { judgmentReasoning: -2, ownership: 0, efficiencyTeamFocus: -2 } },
+            { text: "Crear tu propio calendario privado y dejar de usar el compartido.", scores: { grit: -1, ownership: -2, efficiencyTeamFocus: -3 } }
+        ]
+    },
+    {
+        context: "Te piden hacer una tarea que nunca has hecho antes, por ejemplo, una consolidación de datos bancarios.",
+        dilemma: "No estás seguro de cómo empezar y tienes miedo de cometer un error grave.",
+        question: "¿Cuál es tu primer paso?",
+        options: [
+            { text: "Intentar hacerlo por tu cuenta, usando la lógica y esperando no equivocarte.", scores: { grit: +1, judgmentReasoning: -2, ownership: 0 } },
+            { text: "Pedirle a tu supervisor si puede mostrarte un ejemplo de un trabajo similar hecho anteriormente o si puede explicarte los pasos clave.", scores: { growthMindset: +3, judgmentReasoning: +3, ownership: +2 } },
+            { text: "Buscar a un compañero que sepas que tiene experiencia en eso y pedirle que te enseñe o que revise tu trabajo al final.", scores: { efficiencyTeamFocus: +2, growthMindset: +2, judgmentReasoning: +1 } },
+            { text: "Posponer la tarea, esperando que surja más información o que te la expliquen más adelante.", scores: { grit: -3, ownership: -3, judgmentReasoning: -2 } }
+        ]
+    },
+    {
+        context: "El equipo de marketing se va a un evento y te piden que les prepares 20 'kits de bienvenida' con merchandising de la empresa.",
+        dilemma: "Al prepararlos, te das cuenta de que solo te quedan 18 cuadernos.",
+        question: "¿Cómo lo resuelves?",
+        options: [
+            { text: "Preparas 18 kits y le dices a marketing que no alcanzó para más.", scores: { ownership: -1, grit: -1, customerFocus: -1 } },
+            { text: "Preparas 18 kits con cuadernos y 2 kits con un producto extra de valor similar (ej. una taza) para completarlos.", scores: { agilityFlexibility: +3, judgmentReasoning: +2, ownership: +2 } },
+            { text: "Sales corriendo a una librería cercana a comprar dos cuadernos parecidos con el dinero de la caja chica.", scores: { grit: +2, agilityFlexibility: +1, judgmentReasoning: -1 } },
+            { text: "Contactas al equipo de marketing en el evento para informarles de la situación y preguntarles cómo prefieren proceder.", scores: { efficiencyTeamFocus: +1, judgmentReasoning: +1, ownership: +1 } }
+        ]
+    },
+    {
+        context: "Un compañero se queja constantemente de su carga de trabajo, creando un ambiente negativo.",
+        dilemma: "Su negatividad te está empezando a afectar.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Unirte a sus quejas para mostrarle que lo entiendes.", scores: { efficiencyTeamFocus: -3, growthMindset: -2, ownership: -1 } },
+            { text: "Le sugieres de manera empática que hable con el supervisor sobre su carga de trabajo y le ofreces escucharle si necesita desahogarse en privado.", scores: { efficiencyTeamFocus: +2, judgmentReasoning: +2, growthMindset: +1 } },
+            { text: "Lo ignoras y te pones auriculares para no escuchar sus quejas.", scores: { grit: 0, efficiencyTeamFocus: -1, judgmentReasoning: -1 } },
+            { text: "Le dices directamente que su negatividad está afectando al equipo y que debería parar.", scores: { grit: +1, efficiencyTeamFocus: -2, judgmentReasoning: 0 } }
+        ]
+    },
+    {
+        context: "Debes coordinar una reunión con participantes en tres zonas horarias diferentes (Asia, Europa, América).",
+        dilemma: "Es imposible encontrar un horario que sea conveniente para todos.",
+        question: "¿Cómo agendas la reunión?",
+        options: [
+            { text: "Agendarla en tu propia zona horaria y esperar que los demás se adapten.", scores: { efficiencyTeamFocus: -2, customerFocus: -2, judgmentReasoning: -2 } },
+            { text: "Proponer dos horarios posibles, uno que sea muy temprano para Asia y otro muy tarde para América, y dejar que el grupo vote.", scores: { agilityFlexibility: +2, judgmentReasoning: +2, efficiencyTeamFocus: +2 } },
+            { text: "Cancelar la reunión y sugerir que la discusión se haga por correo electrónico, aunque sea menos efectivo.", scores: { agilityFlexibility: +1, grit: -1, efficiencyTeamFocus: 0 } },
+            { text: "Identificar a los participantes clave, encontrar un horario que funcione para ellos y grabar la reunión para los demás.", scores: { judgmentReasoning: +2, efficiencyTeamFocus: +2, ownership: +1 } }
+        ]
+    },
+    {
+        context: "Tu jefe está muy ocupado y ha empezado a delegarte la tarea de responder algunos de sus correos.",
+        dilemma: "No estás seguro de tener toda la información para responder correctamente en su nombre.",
+        question: "¿Cómo manejas esta nueva responsabilidad?",
+        options: [
+            { text: "Respondes lo mejor que puedes, imitando su estilo y esperando no cometer errores.", scores: { grit: +1, judgmentReasoning: -2, ownership: 0 } },
+            { text: "Le pides a tu jefe que te dé 15 minutos al final del día para revisar juntos los correos que debes responder.", scores: { ownership: +2, judgmentReasoning: +2, efficiencyTeamFocus: +1 } },
+            { text: "Preparas borradores de las respuestas y se los envías a tu jefe para que solo tenga que aprobarlos y enviarlos.", scores: { growthMindset: +2, judgmentReasoning: +3, ownership: +2 } },
+            { text: "Le dices a tu jefe que no te sientes cómodo respondiendo en su nombre.", scores: { grit: -2, ownership: -1, judgmentReasoning: 0 } }
+        ]
+    },
+    {
+        context: "El aire acondicionado de la oficina gotea sobre una caja de archivos importantes.",
+        dilemma: "El personal de mantenimiento dice que no puede venir hasta mañana.",
+        question: "¿Cuál es tu solución inmediata?",
+        options: [
+            { text: "Mover la caja de archivos a un lugar seguro.", scores: { ownership: +3, agilityFlexibility: +2, judgmentReasoning: +1 } },
+            { text: "Poner un balde debajo de la gotera.", scores: { ownership: +2, agilityFlexibility: +1, judgmentReasoning: +1 } },
+            { text: "Mover la caja, poner un balde y además pegar un cartel de 'Cuidado, piso mojado'.", scores: { ownership: +3, judgmentReasoning: +3, efficiencyTeamFocus: +2 } },
+            { text: "Enviar un email a toda la oficina advirtiendo del problema.", scores: { ownership: -1, efficiencyTeamFocus: -1, judgmentReasoning: -1 } }
+        ]
+    },
+    {
+        context: "Te dan un presupuesto para comprar el café y los snacks de la oficina para el mes.",
+        dilemma: "Puedes comprar las marcas de siempre que a todos les gustan, pero que alcanzan justo, o comprar marcas más baratas y que sobre dinero.",
+        question: "¿Qué haces?",
+        options: [
+            { text: "Comprar las marcas de siempre. El bienestar del equipo es importante.", scores: { customerFocus: +1, judgmentReasoning: +2, efficiencyTeamFocus: +1 } },
+            { text: "Comprar las marcas más baratas para demostrar que puedes ahorrarle dinero a la empresa.", scores: { efficiencyTeamFocus: +2, judgmentReasoning: -1, customerFocus: -2 } },
+            { text: "Hacer una compra mixta: mantener el café de siempre (que es lo más importante) y comprar galletas más económicas.", scores: { agilityFlexibility: +2, judgmentReasoning: +2, customerFocus: 0 } },
+            { text: "Hacer una encuesta anónima para que el equipo vote si prefiere calidad o cantidad.", scores: { customerFocus: +2, judgmentReasoning: +3, growthMindset: +1 } }
+        ]
+    },
+    {
+        context: "Llega el fin de tu jornada y estás por irte. Un compañero te pide si puedes quedarte 15 minutos más para ayudarlo a terminar un informe urgente.",
+        dilemma: "Estás cansado y tienes un compromiso personal.",
+        question: "¿Qué le respondes?",
+        options: [
+            { text: "Le dices que lo sientes pero no puedes, que ya terminó tu horario.", scores: { efficiencyTeamFocus: -1, ownership: 0, judgmentReasoning: 0 } },
+            { text: "Te quedas a ayudarlo sin decir nada, aunque llegues tarde a tu compromiso.", scores: { efficiencyTeamFocus: +2, grit: +1, judgmentReasoning: -1 } },
+            { text: "Le dices: 'Hoy no puedo, pero si quieres mañana vengo 15 minutos antes y te ayudo a terminarlo'.", scores: { agilityFlexibility: +2, efficiencyTeamFocus: +2, judgmentReasoning: +2 } },
+            { text: "Le preguntas: '¿En qué parte estás atascado? Quizás pueda explicártelo rápido antes de irme'.", scores: { efficiencyTeamFocus: +3, ownership: +2, judgmentReasoning: +3 } }
+        ]
+    }
+    ]
+};
+
+// ===================================================================================
+// SELECCIÓN DE ELEMENTOS DEL DOM (LA INTERFAZ)
+// ===================================================================================
+
+const DOMElements = {
+    loader: document.getElementById('loader'),
+    appContainer: document.getElementById('app-container'),
+    welcomeView: document.getElementById('welcome-view'),
+    quizView: document.getElementById('quiz-view'),
+    thankYouView: document.getElementById('thank-you-view'),
+    userForm: document.getElementById('user-form'),
+    nombreCompletoInput: document.getElementById('nombreCompleto'),
+    emailInput: document.getElementById('email'),
+    perfilSelect: document.getElementById('perfil'),
+    progressBar: document.getElementById('progress-bar'),
+    currentQNumber: document.getElementById('current-q-number'),
+    totalQNumber: document.getElementById('total-q-number'),
+    profileTag: document.getElementById('profile-tag'),
+    questionContainer: document.getElementById('question-container'),
+    qContext: document.getElementById('q-context'),
+    qDilemma: document.getElementById('q-dilemma'),
+    qText: document.getElementById('q-text'),
+    optionsContainer: document.getElementById('options-container'),
+    nextBtn: document.getElementById('next-btn'),
+    validationError: document.getElementById('validation-error'),
+    darkModeToggle: document.getElementById('dark-mode-toggle'),
+    sunIcon: document.getElementById('sun-icon'),
+    moonIcon: document.getElementById('moon-icon'),
+    sendingSpinner: document.getElementById('sending-spinner'),
+    thankYouContent: document.getElementById('thank-you-content'),
+    errorMessage: document.getElementById('error-message'),
+    radarChartCanvas: document.getElementById('radar-chart')
+};
+
+// ===================================================================================
+// LÓGICA DE LA APLICACIÓN
+// ===================================================================================
+
+function startQuiz() {
+    state.user.nombreCompleto = DOMElements.nombreCompletoInput.value;
+    state.user.email = DOMElements.emailInput.value;
+    state.user.perfil = DOMElements.perfilSelect.value;
+    
+    state.questions = selectRandomQuestions(questionsDB[state.user.perfil] || [], QUESTIONS_TO_ASK);
+    
+    DOMElements.totalQNumber.textContent = state.questions.length;
+    DOMElements.profileTag.textContent = state.user.perfil;
+    
+    transitionView(DOMElements.welcomeView, DOMElements.quizView);
+    renderQuestion();
+}
+
+function selectRandomQuestions(questionArray, num) {
+    const shuffled = [...questionArray].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, Math.min(num, shuffled.length));
+}
+
+function handleOptionSelect(optionBtn, option) {
+    document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+    optionBtn.classList.add('selected');
+    DOMElements.validationError.classList.add('hidden');
+    
+    const currentQuestion = state.questions[state.currentQuestionIndex];
+
+    state.responses[state.currentQuestionIndex] = {
+        consigna: `${currentQuestion.context} ${currentQuestion.dilemma}`,
+        question: currentQuestion.question,
+        answer: option.text,
+        scores: option.scores
+    };
+}
+
+function handleNextQuestion() {
+    if (!state.responses[state.currentQuestionIndex]) {
+        DOMElements.validationError.classList.remove('hidden');
+        return;
+    }
+
+    if (state.currentQuestionIndex < state.questions.length - 1) {
+        state.currentQuestionIndex++;
+        renderQuestion();
+    } else {
+        finishQuiz();
+    }
+}
+
+function calculateFinalScores() {
+    for (const key in state.scores) {
+        state.scores[key] = 0;
+    }
+    
+    state.responses.forEach(response => {
+        for (const trait in response.scores) {
+            if (state.scores.hasOwnProperty(trait)) {
+                state.scores[trait] += response.scores[trait];
+            }
+        }
+    });
+}
+
+async function finishQuiz() {
+    calculateFinalScores();
+    transitionView(DOMElements.quizView, DOMElements.thankYouView);
+    await sendToGoogleSheets();
+}
+
+// ===================================================================================
+// FUNCIONES DE RENDERIZADO (ACTUALIZACIÓN DE LA INTERFAZ)
+// ===================================================================================
+
+function renderQuestion() {
+    const question = state.questions[state.currentQuestionIndex];
+    DOMElements.questionContainer.classList.add('fade-slide-exit');
+    
+    setTimeout(() => {
+        DOMElements.qContext.textContent = question.context;
+        DOMElements.qDilemma.textContent = question.dilemma;
+        DOMElements.qText.textContent = question.question;
+        
+        DOMElements.optionsContainer.innerHTML = '';
+        question.options.forEach(option => {
+            const optionBtn = document.createElement('button');
+            
+            optionBtn.className = 'option-btn p-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-left bg-white/50 dark:bg-gray-800/50';
+            
+            optionBtn.innerHTML = `<p class="text-gray-800 dark:text-gray-200">${option.text}</p>`;
+            optionBtn.onclick = () => handleOptionSelect(optionBtn, option);
+            DOMElements.optionsContainer.appendChild(optionBtn);
+        });
+
+        const selectedResponse = state.responses[state.currentQuestionIndex];
+        if (selectedResponse) {
+            const allOptionBtns = DOMElements.optionsContainer.querySelectorAll('.option-btn');
+            const optionIndex = question.options.findIndex(opt => opt.text === selectedResponse.answer);
+            if (allOptionBtns[optionIndex]) {
+                allOptionBtns[optionIndex].classList.add('selected');
+            }
+        }
+
+        DOMElements.currentQNumber.textContent = state.currentQuestionIndex + 1;
+        const progress = ((state.currentQuestionIndex + 1) / state.questions.length) * 100;
+        DOMElements.progressBar.style.width = `${progress}%`;
+        
+        if (state.currentQuestionIndex === state.questions.length - 1) {
+            DOMElements.nextBtn.textContent = 'Finalizar y Enviar';
+        } else {
+            DOMElements.nextBtn.textContent = 'Siguiente';
+        }
+
+        DOMElements.questionContainer.classList.remove('fade-slide-exit');
+        DOMElements.questionContainer.classList.add('fade-slide-enter');
+        setTimeout(() => DOMElements.questionContainer.classList.remove('fade-slide-enter'), 400);
+
+    }, 400);
+}
+
+function renderRadarChart() {
+    const labels = [
+        'Responsabilidad', 'Perseverancia', 'Mente Crecimiento', 
+        'Juicio/Razón', 'Agilidad/Flexibilidad', 'Foco Cliente', 'Eficiencia/Equipo'
+    ];
+    const data = Object.values(state.scores);
+    
+    const maxPossibleScore = QUESTIONS_TO_ASK * 3;
+    const minPossibleScore = QUESTIONS_TO_ASK * -3;
+    const normalizedData = data.map(score => 10 * (score - minPossibleScore) / (maxPossibleScore - minPossibleScore));
+
+    window.myRadarChart = new Chart(DOMElements.radarChartCanvas.getContext('2d'), {
+        type: 'radar',
+        data: {
+            labels: labels.map(l => l.replace('/', '/\n')),
+            datasets: [{
+                label: 'Tu Perfil de Comportamiento',
+                data: normalizedData,
+                fill: true,
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                pointBorderColor: '#fff',
+            }]
+        },
+        options: {
+            scales: {
+                r: {
+                    angleLines: { color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' },
+                    grid: { color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' },
+                    pointLabels: { 
+                        font: { size: 12 },
+                        color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#475569'
+                    },
+                    ticks: { display: false, maxTicksLimit: 5 },
+                    min: 0,
+                    max: 10
+                }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function transitionView(from, to) {
+    from.classList.add('fade-slide-exit');
+    setTimeout(() => {
+        from.classList.add('hidden');
+        from.classList.remove('fade-slide-exit');
+        to.classList.remove('hidden');
+        to.classList.add('fade-slide-enter');
+        setTimeout(() => to.classList.remove('fade-slide-enter'), 10);
+    }, 400);
+}
+
+function toggleDarkMode() {
+    const html = document.documentElement;
+    html.classList.toggle('dark');
+    if (html.classList.contains('dark')) {
+        localStorage.setItem('theme', 'dark');
+        DOMElements.sunIcon.classList.add('hidden');
+        DOMElements.moonIcon.classList.remove('hidden');
+    } else {
+        localStorage.setItem('theme', 'light');
+        DOMElements.sunIcon.classList.remove('hidden');
+        DOMElements.moonIcon.classList.add('hidden');
+    }
+    if (window.myRadarChart) {
+        window.myRadarChart.destroy();
+    }
+    if (!DOMElements.thankYouContent.classList.contains('hidden')) {
+        renderRadarChart();
+    }
+}
+
+// ===================================================================================
+// EVENT LISTENERS
+// ===================================================================================
+
+DOMElements.userForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    startQuiz();
+});
+
+DOMElements.nextBtn.addEventListener('click', handleNextQuestion);
+
+DOMElements.darkModeToggle.addEventListener('click', toggleDarkMode);
+
+document.addEventListener('keydown', (e) => {
+    if (DOMElements.quizView.classList.contains('hidden')) return;
+
+    const options = DOMElements.optionsContainer.querySelectorAll('.option-btn');
+    if (e.key >= '1' && e.key <= String(options.length)) {
+        const index = parseInt(e.key, 10) - 1;
+        if(options[index]) options[index].click();
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        DOMElements.nextBtn.click();
+    }
+});
+
+// ===================================================================================
+// INTEGRACIÓN CON API DE GOOGLE
+// ===================================================================================
+
+async function sendToGoogleSheets() {
+    state.isSubmitting = true;
+    
+    const finalDataPackage = {
+        nombreCompleto: state.user.nombreCompleto,
+        email: state.user.email,
+        perfil: state.user.perfil,
+        scores: state.scores,
+        responses: state.responses.map(r => ({ 
+            consigna: r.consigna, 
+            question: r.question, 
+            answer: r.answer 
+        }))
+    };
+    
+    try {
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(finalDataPackage)
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const result = await response.json();
+
+        if (result.result === "success") {
+            DOMElements.sendingSpinner.classList.add('hidden');
+            DOMElements.thankYouContent.classList.remove('hidden');
+            renderRadarChart();
+        } else {
+            throw new Error(result.message || 'Error desconocido proveniente del script de Google.');
+        }
+
+    } catch (error) {
+        console.error('Error al enviar los datos a Google Sheets:', error);
+        DOMElements.sendingSpinner.classList.add('hidden');
+        DOMElements.errorMessage.classList.remove('hidden');
+    } finally {
+        state.isSubmitting = false;
+    }
+}
+
+// ===================================================================================
+// INICIALIZACIÓN DE LA APLICACIÓN
+// ===================================================================================
+
+window.addEventListener('load', () => {
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        DOMElements.sunIcon.classList.add('hidden');
+        DOMElements.moonIcon.classList.remove('hidden');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+    
+    setTimeout(() => {
+        DOMElements.loader.style.opacity = '0';
+        DOMElements.appContainer.style.opacity = '1';
+        setTimeout(() => DOMElements.loader.style.display = 'none', 500);
+    }, 500); 
+});
+</script>
+</body>
+</html>
